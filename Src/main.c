@@ -222,7 +222,7 @@ volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
 const uint8_t number_of_songs = 4;
-const uint16_t quarter_duration = 306;
+const uint16_t quarter_duration = 204;
 const Tone * Songs[5];
 uint8_t current_song = 0;
 enum songs {
