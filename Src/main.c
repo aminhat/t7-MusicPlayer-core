@@ -220,7 +220,7 @@ const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
-volatile uint16_t volume = 10; // (0 - 1000)
+volatile uint16_t volume = 900; // (0 - 1000)
 const uint8_t number_of_songs = 4;
 const uint16_t quarter_duration = 204;
 const Tone * Songs[5];
@@ -532,57 +532,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
-	if(HAL_GetTick() - last_interrupt < 200)
+	if(HAL_GetTick() - last_interrupt < 150)
 		return;
 
 	last_interrupt = HAL_GetTick();
 
-	HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
-//
-//	if(GPIO_Pin == GPIO_PIN_11) { //increase selected digit
-//		input_led_state = 1;
-//		if(digit_confirmed[selected_digit] == 0 && input_permision) {
-//			digits[selected_digit] = (digits[selected_digit] + 1) % 10;
-//		}
-//	}
-//	else if(GPIO_Pin == GPIO_PIN_10) { //next digit
-//		if(input_permision)
-//		selected_digit = (selected_digit + 1) % 4;
-//
-//
-//	}
-//	else if(GPIO_Pin == GPIO_PIN_15) { //confirm digit
-//		input_led_state = 1;
-//		if(digit_confirmed[selected_digit]) {
-//			--digit_confirmed_no;
-//			digit_confirmed[selected_digit] = 0;
-//		} else {
-//			++digit_confirmed_no;
-//			digit_confirmed[selected_digit] = 1;
-//			if(digit_confirmed_no == 4) {
-//				if(digits[0] == password[0] && digits[1] == password[1] && digits[2] == password[2] && digits[3] == password[3]) {
-//					digits[0] = digits[1] = digits[2] = digits[3] = 0;
-//					corct_pass_led_state = 1;
-//					wrong_password_no = 0;
-//					uart_log(4);
-//				} else {
-//					wrong_pass_led_state = 1;
-//					++wrong_password_no;
-//					if(wrong_password_no > 2) {
-//						input_permision = 0;
-//					}
-//					uart_log(5);
-//				}
-//				digit_confirmed[0] = digit_confirmed[1] = digit_confirmed[2] = digit_confirmed[3] = 0;
-//				digit_confirmed_no = 0;
-//				input_led_state = 0;
-//			}
-//		}
-//	} else if(GPIO_Pin == GPIO_PIN_0) {
-//		wrong_password_no = 0;
-//		input_permision = 1;
-//		buzzerChangeTone(0, 0);
-//	}
 }
 //
 //
