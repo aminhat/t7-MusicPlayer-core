@@ -462,11 +462,6 @@ void Update_Melody()
     }
 }
 
-
-
-
-
-
 uint8_t strcmpwithlength(const char * str1, const char * str2, const uint8_t len)
 {
 	for(int i = 0 ; i < len; ++i) {
@@ -475,24 +470,6 @@ uint8_t strcmpwithlength(const char * str1, const char * str2, const uint8_t len
 	}
 	return 1;
 }
-
-//
-//void uart_log(uint8_t state) {
-//	if(log_on == 0)
-//		return;
-//
-//	switch (state) {
-//		case 1:
-//
-//			break;
-//		default:
-//			break;
-//	}
-//	//HAL_UART_Transmit_IT(&huart1, &transmit_data, strlen(transmit_data));
-//	HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
-//	HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 200);
-//}
-//
 
 
 void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
@@ -514,8 +491,7 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, dcpoint == 1 ? 1 : 0);
 }
 
-
-
+//--------interrupts functions
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM2) {
@@ -530,8 +506,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
-//
-//
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
@@ -541,6 +515,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	last_interrupt = HAL_GetTick();
 
 }
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+
+
+	if(hadc->Instance == ADC1) {
+		static uint8_t sample_no = 0;
+		static uint32_t samples_sum = 0;
+		static uint16_t val;
+		val = HAL_ADC_GetValue(&hadc1);
+		samples_sum += val;
+		++sample_no;
+		if(sample_no == 50) {
+
+		}
+		char str[100];
+		sprintf(str, "%lu\n", val);
+		HAL_UART_Transmit(&huart1, str, strlen(str), HAL_MAX_DELAY);
+		HAL_ADC_Start_IT(&hadc1);
+	}
+}
+
+
 //
 //
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -679,8 +675,7 @@ int main(void)
   PWM_Start();
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
   Change_Melody(mario2, ARRAY_LENGTH(mario2));
-  HAL_UART_Transmit(&huart1, "salam\r", 6, HAL_MAX_DELAY);
-
+//  HAL_ADC_Start_IT(&hadc1);
 
   /* USER CODE END 2 */
 
