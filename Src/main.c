@@ -221,6 +221,9 @@ uint8_t data_index = 0;
 char receive;
 char transmit_data[50];
 uint8_t uart_mode = 1;
+uint8_t log_state = 0;
+const char * MUSIC_SET = "MUSIC_SET";
+const char * MUSIC_SET = "CHANGE_VOLUME";
 
 //--------LEDs
 GPIO_TypeDef * ledg = GPIOE;
@@ -502,6 +505,32 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, dcpoint == 1 ? 1 : 0);
 }
 
+
+
+void uart_log(uint8_t state) {
+	uint8_t time = HAL_GetTick();
+	switch (state) {
+		case 1: // inside () is wrong for MUSIC_SET
+			sprintf(transmit_data, "[ERROR][Music not found][%d]", time);
+			break;
+		case 2: //music number changed
+			sprintf(transmit_data, "[INFO][Music changed to %d][%d]", current_song, time);
+			break;
+		case 3: //
+			sprintf(transmit_data, "[ERROR][Volume not valid][%d]", time);
+			break;
+		case 4: //
+			sprintf(transmit_data, "[INFO][Volume changed to %d][%d]", volume, time);
+			break;
+
+		default:
+			break;
+	}
+	HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 200);
+}
+
+
+
 //--------interrupts functions
 unsigned int a = 0;
 
@@ -580,98 +609,68 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 }
 
 
-//
-//
-//void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
-//{
-//	if(huart->Instance == USART1) {
-//		HAL_UART_Receive_IT(&huart1, &receive, 1);
-//		receive_data[data_index] = receive;
-//		++data_index;
-//		if(receive == '\n') {
-//			if(strcmpwithlength(receive_data, SET_PASS, 8)) {
-//				if(data_index == 15
-//				   && receive_data[8] == '('
-//				   && receive_data[9] >= '0' && receive_data[9] <= '9'
-//				   && receive_data[10] >= '0' && receive_data[10] <= '9'
-//				   && receive_data[11] >= '0' && receive_data[11] <= '9'
-//				   && receive_data[12] >= '0' && receive_data[12] <= '9'
-//				   && receive_data[13] == ')') {
-//
-//					//repeated password
-//					if(receive_data[12] - '0' == password[3] &&
-//						receive_data[11] - '0' == password[2] &&
-//						receive_data[10] - '0' == password[1] &&
-//						receive_data[9] - '0' == password[0]) {
-//						log_state = 2;
-//
-//					} else {
-//						HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_13);
-//						password[3] = receive_data[12] - '0';
-//						password[2] = receive_data[11] - '0';
-//						password[1] = receive_data[10] - '0';
-//						password[0] = receive_data[9] - '0';
-//						log_state = 3;
-//						}
-//					} else {
-//						log_state = 2;
-//				}
-//
-//			} else if(strcmpwithlength(receive_data, LOG_ON, strlen(LOG_ON))) {
-//				log_on = 1;
-//				log_state = 6;
-//
-//			} else if(strcmpwithlength(receive_data, LOG_OFF, strlen(LOG_OFF))) {
-//				log_state = 7;
-////				log_on = 0;
-//
-//			} else if(strcmpwithlength(receive_data, ALERT_ON, strlen(ALERT_ON))) {
-//				buzzer_on = 2;
-//				buzzerChangeTone(1500, 100);
-//				log_state = 11;
-//
-//			} else if(strcmpwithlength(receive_data, ALERT_OFF, strlen(ALERT_OFF))) {
-//				buzzer_on = 0;
-//				log_state = 10;
-//
-//			} else if(strcmpwithlength(receive_data, SET_VOLUME, strlen(SET_VOLUME))) {
-//				if(data_index == 14
-//				   && receive_data[10] == '('
-//				   && receive_data[11] >= '0' && receive_data[11] <= '6'
-//				   && receive_data[12] == ')') {
-//
-//					buzzer_volume = (receive_data[11] - '0') * 20;
-//					log_state = 9;
-//
-//					} else {
-//						log_state = 2;
-//				}
-//			} else if(strcmpwithlength(receive_data, SET_ALERT, strlen(SET_ALERT))) {
-//				if(data_index == 16
-//				   && receive_data[9] == '('
-//				   && receive_data[10] >= '0' && receive_data[10] <= '9'
-//				   && receive_data[11] >= '0' && receive_data[11] <= '9'
-//				   && receive_data[12] >= '0' && receive_data[12] <= '9'
-//				   && receive_data[13] >= '0' && receive_data[13] <= '9'
-//				   && receive_data[14] == ')') {
-//
-//						HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_13);
-//						buzzer_wrong_alert_frq = (receive_data[10] - '0') * 1000 + (receive_data[11] - '0') * 100 + (receive_data[12] - '0') * 10 + (receive_data[13] - '0');
-//						log_state = 8;
-//
-//					} else {
-//						log_state = 2;
-//					}
-//			} else {
-//				log_state = 1;
-//			}
-//			uart_log(log_state);
-//			data_index = 0;
-//		}
-//	}
-//}
-//
-//
+
+
+void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
+{
+	if(huart->Instance == USART1) {
+		HAL_UART_Receive_IT(&huart1, &receive, 1);
+		receive_data[data_index] = receive;
+		++data_index;
+		if(receive == '\n') {
+			if(strcmpwithlength(receive_data, MUSIC_SET, 9)) {
+				if(data_index == 13
+				    && receive_data[9] == '('
+				    && receive_data[10] >= '0' && receive_data[10] <= '9'
+				    && receive_data[11] == ')')
+				{
+					current_song = received_data[10] - '0';
+					log_state = 2; // music number changed
+
+
+				} else {
+					log_state = 1;
+				}
+
+			} else if(strcmpwithlength(received_data, CHANGING_VOLUME, 15)) {
+				if(data_index <= 21 & data_index >= 19) {
+						       if(received_data[15] == '('
+								&& received_data[16] >= '0' && received_data[16] <= '9'
+								&& received_data[17] == ')') {
+						    	   volume = received_data[16] - '0';
+						    	   log_state = 4; // volume changed
+
+						       } else if(received_data[15] == '('
+								&& received_data[16] >= '0' && received_data[16] <= '9'
+								&& received_data[17] >= '0' && received_data[17] <= '9'
+								&& received_data[18] == ')') {
+						    	   volume = (received_data[16] - '0') * 10 + received_data[17] - '0';
+						    	   log_state = 4; // volume changed
+
+						       } else if(received_data[15] == '('
+								&& received_data[16] >= '0' && received_data[16] <= '9'
+								&& received_data[17] >= '0' && received_data[17] <= '9'
+								&& received_data[18] >= '0' && received_data[18] <= '9'
+								&& received_data[19] == ')') {
+						    	   volume = (received_data[16] - '0') * 100 + (received_data[17] - '0') * 10 + received_data[18] - '0';
+						    	   log_state = 4; // volume changed
+						       } else {
+						    	   log_state = 3; // inside () is wrong
+						       }
+
+				} else {
+					log_state = 3; // inside () is wrong
+				}
+			} else {
+//				log_state =
+			}
+			uart_log(log_state);
+			data_index = 0;
+		}
+	}
+}
+
+
 
 
 /* USER CODE END 0 */
