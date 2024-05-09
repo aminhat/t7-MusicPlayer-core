@@ -191,16 +191,11 @@ enum states {
 
 //-----------Global variables-----------\\
 
-<<<<<<< HEAD
 
 //--------general controlling variables
 uint8_t current_state = PAUSE;
 uint32_t potensiometer_value;
-=======
-//--------general cotroling variables
-uint8_t current_state = PAUSE;
 uint8_t previous_state = PAUSE;
->>>>>>> 5ef555c994f182199245f11144a04ca0a650bac6
 
 //--------number to 7448
 GPIO_TypeDef * pin = GPIOD;
@@ -528,26 +523,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
-<<<<<<< HEAD
-//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-//{
-//	static last_interrupt = 0;
-//	if(HAL_GetTick() - last_interrupt < 150)
-//		return;
-//
-//	last_interrupt = HAL_GetTick();
-//	if(GPIO_Pin == GPIO_PIN_11) {
-//		if(current_state == PAUSE) {
-//			current_state == PLAYING;
-//		} else if(current_state == PLAYING) {
-//			current_state == PAUSE;
-//		}
-//	} else (GPIO_Pin == GPIO_PIN_10) {
-//
-//	}
-//
-//}
-=======
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
@@ -579,7 +554,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 
 }
 
->>>>>>> 5ef555c994f182199245f11144a04ca0a650bac6
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if(hadc->Instance == ADC1) {
 		static uint8_t sample_no = 0;
