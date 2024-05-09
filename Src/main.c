@@ -173,31 +173,54 @@ static void MX_ADC1_Init(void);
 
 
 
-//number to 7448
+//--------strcutures
+typedef struct
+{
+    uint16_t frequency;
+    uint16_t duration;
+} Tone;
+
+//--------enums
+enum songs {
+	MARIO,
+
+};
+enum states {
+	PAUSE,
+	PLAYING,
+	CHANGING_VOLUME,
+	CHANGING_SONG,
+
+};
+
+//--------general cotroling variables
+uint8_t current_state = PAUSE;
+
+
+//--------number to 7448
 GPIO_TypeDef * pin = GPIOD;
 uint16_t bit0 = GPIO_PIN_4;
 uint16_t bit1 = GPIO_PIN_5;
 uint16_t bit2 = GPIO_PIN_6;
 uint16_t bit3 = GPIO_PIN_7;
 
-//digit to be turned on
+//--------digit to be turned on
 uint16_t bitActive0 = GPIO_PIN_2;
 uint16_t bitActive1 = GPIO_PIN_3;
 uint16_t bitActive2 = GPIO_PIN_1;
 uint16_t bitActive3 = GPIO_PIN_0;
 
-
-//Digits
+//--------Digits
 uint8_t digits[4] = {0, 1, 2, 3};
 
-//UART
+//--------UART
 char received_data[50];
 uint8_t data_index = 0;
 char receive;
 char transmit_data[50];
 uint8_t uart_mode = 1;
 
-//LEDs
+//--------LEDs
 GPIO_TypeDef * ledg = GPIOE;
 uint16_t led0 = GPIO_PIN_8;
 uint16_t led1 = GPIO_PIN_9;
@@ -208,15 +231,7 @@ uint16_t led5 = GPIO_PIN_13;
 uint16_t led6 = GPIO_PIN_14;
 uint16_t led7 = GPIO_PIN_15;
 
-//Tone strcuture
-typedef struct
-{
-    uint16_t frequency;
-    uint16_t duration;
-} Tone;
-
-//Buzzer
-
+//--------Buzzer
 TIM_HandleTypeDef *buzzer_pwm_timer = &htim2;	// Point to PWM Timer configured in CubeMX
 uint32_t buzzer_pwm_channel = TIM_CHANNEL_2;   // Select configured PWM channel number
 const Tone *volatile melody_ptr;
@@ -228,13 +243,8 @@ const uint8_t number_of_songs = 4;
 const uint16_t quarter_duration = 204;
 const Tone * Songs[5];
 uint8_t current_song = 0;
-enum songs {
-	MARIO,
 
-};
-
-
-//melodies
+//--------melodies
 const Tone super_mario_bros[] = {
 	{2637,306}, // E7 x2
 	{   0,153}, // x3 <-- Silence
@@ -416,8 +426,7 @@ const Tone mario2[] = {
 };
 
 
-//playing songs functions
-
+//--------playing songs functions
 void PWM_Start()
 {
     HAL_TIM_PWM_Start(buzzer_pwm_timer, buzzer_pwm_channel);
@@ -513,6 +522,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		return;
 
 	last_interrupt = HAL_GetTick();
+	if(GPIO_Pin == GPIO_PIN_11) {
+		if(current_state == PAUSE) {
+			current_state == PLAYING;
+		} else if(current_state == PLAYING) {
+			current_state == PAUSE;
+		}
+	} else (GPIO_Pin == GPIO_PIN_10) {
+
+	}
 
 }
 
@@ -1090,8 +1108,8 @@ static void MX_GPIO_Init(void)
 
   /*Configure GPIO pin : PC10 */
   GPIO_InitStruct.Pin = GPIO_PIN_10;
-  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING;
-  GPIO_InitStruct.Pull = GPIO_NOPULL;
+  GPIO_InitStruct.Mode = GPIO_MODE_IT_RISING_FALLING;
+  GPIO_InitStruct.Pull = GPIO_PULLDOWN;
   HAL_GPIO_Init(GPIOC, &GPIO_InitStruct);
 
   /*Configure GPIO pin : PC11 */
