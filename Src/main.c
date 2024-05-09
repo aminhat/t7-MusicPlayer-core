@@ -30,54 +30,17 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+//--------strcutures
+typedef struct
+{
+    uint16_t frequency;
+    uint16_t duration;
+} Tone;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-
-I2C_HandleTypeDef hi2c1;
-
-SPI_HandleTypeDef hspi1;
-
-TIM_HandleTypeDef htim2;
-
-UART_HandleTypeDef huart1;
-
-PCD_HandleTypeDef hpcd_USB_FS;
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_USB_PCD_Init(void);
-static void MX_TIM2_Init(void);
-static void MX_USART1_UART_Init(void);
-static void MX_ADC1_Init(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-
-//-----------Global variables-----------\\
-
 
 #define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define NOTE_B0  31
@@ -171,14 +134,45 @@ static void MX_ADC1_Init(void);
 #define NOTE_DS8 4978
 #define REST      0
 
+/* USER CODE END PD */
 
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
 
-//--------strcutures
-typedef struct
-{
-    uint16_t frequency;
-    uint16_t duration;
-} Tone;
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
+I2C_HandleTypeDef hi2c1;
+
+SPI_HandleTypeDef hspi1;
+
+TIM_HandleTypeDef htim2;
+
+UART_HandleTypeDef huart1;
+
+PCD_HandleTypeDef hpcd_USB_FS;
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
+static void MX_USB_PCD_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_ADC1_Init(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
 //--------enums
 enum songs {
@@ -192,6 +186,8 @@ enum states {
 	CHANGING_SONG,
 
 };
+
+//-----------Global variables-----------\\
 
 //--------general cotroling variables
 uint8_t current_state = PAUSE;
