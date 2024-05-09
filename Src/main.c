@@ -529,13 +529,15 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 //
 //
-//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-//{
-//	static last_interrupt = 0;
-//	if(HAL_GetTick() - last_interrupt < 200)
-//		return;
-//
-//	last_interrupt = HAL_GetTick();
+void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+{
+	static last_interrupt = 0;
+	if(HAL_GetTick() - last_interrupt < 200)
+		return;
+
+	last_interrupt = HAL_GetTick();
+
+	HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
 //
 //	if(GPIO_Pin == GPIO_PIN_11) { //increase selected digit
 //		input_led_state = 1;
@@ -581,7 +583,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 //		input_permision = 1;
 //		buzzerChangeTone(0, 0);
 //	}
-//}
+}
 //
 //
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
