@@ -195,7 +195,7 @@ enum states {
 
 //--------general cotroling variables
 uint8_t current_state = PAUSE;
-
+uint8_t previous_state = PAUSE;
 
 //--------number to 7448
 GPIO_TypeDef * pin = GPIOD;
@@ -548,14 +548,26 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		return;
 
 	last_interrupt = HAL_GetTick();
-	if(GPIO_Pin == GPIO_PIN_11) {
+	if(GPIO_Pin == GPIO_PIN_11) { // C11 buttion : [.] [] []
 		if(current_state == PAUSE) {
 			current_state == PLAYING;
 		} else if(current_state == PLAYING) {
 			current_state == PAUSE;
 		}
-	} else (GPIO_Pin == GPIO_PIN_10) {
-
+	} else if (GPIO_Pin == GPIO_PIN_10) { // C10 buttion : [] [.] []
+		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == 1) {
+			previous_state = current_state;
+			current_state = CHANGING_SONG;
+		} else {
+			current_state = previous_state;
+		}
+	} else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.]
+		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
+			previous_state = current_state;
+			current_state = CHANGING_VOLUME;
+		} else {
+			current_state = previous_state;
+		}
 	}
 
 }
