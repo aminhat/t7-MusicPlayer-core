@@ -134,6 +134,8 @@ typedef struct
 #define NOTE_DS8 4978
 #define REST      0
 
+#define MAX_SAMPLE_NUMBER 100
+
 /* USER CODE END PD */
 
 /* Private macro -------------------------------------------------------------*/
@@ -189,9 +191,10 @@ enum states {
 
 //-----------Global variables-----------\\
 
-//--------general cotroling variables
-uint8_t current_state = PAUSE;
 
+//--------general controlling variables
+uint8_t current_state = PAUSE;
+uint32_t potensiometer_value;
 
 //--------number to 7448
 GPIO_TypeDef * pin = GPIOD;
@@ -497,42 +500,47 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
 }
 
 //--------interrupts functions
+unsigned int a = 0;
+
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM2) {
 
+
+
 		Update_Melody();
 
 		static uint8_t i = 0;
-		display_digit(i, i, 1);
+		display_digit(digits[i], i, 1);
 		++i;
 		i = i % 4;
 
+		HAL_ADC_Start_IT(&hadc1);
+		++a;
+
+
 	}
 }
 
-void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
-{
-	static last_interrupt = 0;
-	if(HAL_GetTick() - last_interrupt < 150)
-		return;
-
-	last_interrupt = HAL_GetTick();
-	if(GPIO_Pin == GPIO_PIN_11) {
-		if(current_state == PAUSE) {
-			current_state == PLAYING;
-		} else if(current_state == PLAYING) {
-			current_state == PAUSE;
-		}
-	} else (GPIO_Pin == GPIO_PIN_10) {
-
-	}
-
-}
-
+//void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
+//{
+//	static last_interrupt = 0;
+//	if(HAL_GetTick() - last_interrupt < 150)
+//		return;
+//
+//	last_interrupt = HAL_GetTick();
+//	if(GPIO_Pin == GPIO_PIN_11) {
+//		if(current_state == PAUSE) {
+//			current_state == PLAYING;
+//		} else if(current_state == PLAYING) {
+//			current_state == PAUSE;
+//		}
+//	} else (GPIO_Pin == GPIO_PIN_10) {
+//
+//	}
+//
+//}
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
-
-
 	if(hadc->Instance == ADC1) {
 		static uint8_t sample_no = 0;
 		static uint32_t samples_sum = 0;
@@ -540,13 +548,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		val = HAL_ADC_GetValue(&hadc1);
 		samples_sum += val;
 		++sample_no;
-		if(sample_no == 50) {
-
+		if(sample_no == MAX_SAMPLE_NUMBER) {
+			potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER;
+			sprintf(transmit_data, "%lu\n", potensiometer_value);
+			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), HAL_MAX_DELAY);
+			digits[3] = (potensiometer_value / 40)% 10;
+			digits[2] = (potensiometer_value / 400) % 10;
+			digits[1] = (potensiometer_value / 4000) % 10;
+			digits[0] = 0;
+			sample_no = 0;
+			samples_sum = 0;
 		}
-		char str[100];
-		sprintf(str, "%lu\n", val);
-		HAL_UART_Transmit(&huart1, str, strlen(str), HAL_MAX_DELAY);
-		HAL_ADC_Start_IT(&hadc1);
+
 	}
 }
 
@@ -689,7 +702,7 @@ int main(void)
   PWM_Start();
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
   Change_Melody(mario2, ARRAY_LENGTH(mario2));
-//  HAL_ADC_Start_IT(&hadc1);
+  HAL_ADC_Start_IT(&hadc1);
 
   /* USER CODE END 2 */
 
