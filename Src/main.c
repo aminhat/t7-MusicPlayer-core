@@ -30,54 +30,17 @@
 /* Private typedef -----------------------------------------------------------*/
 /* USER CODE BEGIN PTD */
 
+//--------strcutures
+typedef struct
+{
+    uint16_t frequency;
+    uint16_t duration;
+} Tone;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
 /* USER CODE BEGIN PD */
-
-/* USER CODE END PD */
-
-/* Private macro -------------------------------------------------------------*/
-/* USER CODE BEGIN PM */
-
-/* USER CODE END PM */
-
-/* Private variables ---------------------------------------------------------*/
-ADC_HandleTypeDef hadc1;
-
-I2C_HandleTypeDef hi2c1;
-
-SPI_HandleTypeDef hspi1;
-
-TIM_HandleTypeDef htim2;
-
-UART_HandleTypeDef huart1;
-
-PCD_HandleTypeDef hpcd_USB_FS;
-
-/* USER CODE BEGIN PV */
-
-/* USER CODE END PV */
-
-/* Private function prototypes -----------------------------------------------*/
-void SystemClock_Config(void);
-static void MX_GPIO_Init(void);
-static void MX_I2C1_Init(void);
-static void MX_SPI1_Init(void);
-static void MX_USB_PCD_Init(void);
-static void MX_TIM2_Init(void);
-static void MX_USART1_UART_Init(void);
-static void MX_ADC1_Init(void);
-/* USER CODE BEGIN PFP */
-
-/* USER CODE END PFP */
-
-/* Private user code ---------------------------------------------------------*/
-/* USER CODE BEGIN 0 */
-
-
-//-----------Global variables-----------\\
-
 
 #define ARRAY_LENGTH(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define NOTE_B0  31
@@ -171,14 +134,45 @@ static void MX_ADC1_Init(void);
 #define NOTE_DS8 4978
 #define REST      0
 
+/* USER CODE END PD */
 
+/* Private macro -------------------------------------------------------------*/
+/* USER CODE BEGIN PM */
 
-//--------strcutures
-typedef struct
-{
-    uint16_t frequency;
-    uint16_t duration;
-} Tone;
+/* USER CODE END PM */
+
+/* Private variables ---------------------------------------------------------*/
+ADC_HandleTypeDef hadc1;
+
+I2C_HandleTypeDef hi2c1;
+
+SPI_HandleTypeDef hspi1;
+
+TIM_HandleTypeDef htim2;
+
+UART_HandleTypeDef huart1;
+
+PCD_HandleTypeDef hpcd_USB_FS;
+
+/* USER CODE BEGIN PV */
+
+/* USER CODE END PV */
+
+/* Private function prototypes -----------------------------------------------*/
+void SystemClock_Config(void);
+static void MX_GPIO_Init(void);
+static void MX_I2C1_Init(void);
+static void MX_SPI1_Init(void);
+static void MX_USB_PCD_Init(void);
+static void MX_TIM2_Init(void);
+static void MX_USART1_UART_Init(void);
+static void MX_ADC1_Init(void);
+/* USER CODE BEGIN PFP */
+
+/* USER CODE END PFP */
+
+/* Private user code ---------------------------------------------------------*/
+/* USER CODE BEGIN 0 */
 
 //--------enums
 enum songs {
@@ -192,6 +186,8 @@ enum states {
 	CHANGING_SONG,
 
 };
+
+//-----------Global variables-----------\\
 
 //--------general cotroling variables
 uint8_t current_state = PAUSE;
@@ -471,11 +467,6 @@ void Update_Melody()
     }
 }
 
-
-
-
-
-
 uint8_t strcmpwithlength(const char * str1, const char * str2, const uint8_t len)
 {
 	for(int i = 0 ; i < len; ++i) {
@@ -484,24 +475,6 @@ uint8_t strcmpwithlength(const char * str1, const char * str2, const uint8_t len
 	}
 	return 1;
 }
-
-//
-//void uart_log(uint8_t state) {
-//	if(log_on == 0)
-//		return;
-//
-//	switch (state) {
-//		case 1:
-//
-//			break;
-//		default:
-//			break;
-//	}
-//	//HAL_UART_Transmit_IT(&huart1, &transmit_data, strlen(transmit_data));
-//	HAL_GPIO_TogglePin(GPIOE, GPIO_PIN_8);
-//	HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 200);
-//}
-//
 
 
 void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
@@ -523,8 +496,7 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, dcpoint == 1 ? 1 : 0);
 }
 
-
-
+//--------interrupts functions
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM2) {
@@ -539,8 +511,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	}
 }
 
-//
-//
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
@@ -571,6 +541,28 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	}
 
 }
+
+void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
+
+
+	if(hadc->Instance == ADC1) {
+		static uint8_t sample_no = 0;
+		static uint32_t samples_sum = 0;
+		static uint16_t val;
+		val = HAL_ADC_GetValue(&hadc1);
+		samples_sum += val;
+		++sample_no;
+		if(sample_no == 50) {
+
+		}
+		char str[100];
+		sprintf(str, "%lu\n", val);
+		HAL_UART_Transmit(&huart1, str, strlen(str), HAL_MAX_DELAY);
+		HAL_ADC_Start_IT(&hadc1);
+	}
+}
+
+
 //
 //
 //void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
@@ -709,8 +701,7 @@ int main(void)
   PWM_Start();
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
   Change_Melody(mario2, ARRAY_LENGTH(mario2));
-  HAL_UART_Transmit(&huart1, "salam\r", 6, HAL_MAX_DELAY);
-
+//  HAL_ADC_Start_IT(&hadc1);
 
   /* USER CODE END 2 */
 
