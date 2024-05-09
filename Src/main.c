@@ -711,7 +711,7 @@ int main(void)
   MX_ADC1_Init();
   /* USER CODE BEGIN 2 */
 
-  Update_Melody();
+//  Update_Melody();
   HAL_TIM_Base_Start_IT(&htim2);
   PWM_Start();
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
