@@ -516,9 +516,6 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, dcpoint == 1 ? 1 : 0);
 }
 
-<<<<<<< HEAD
-
-
 void uart_log(uint8_t state) {
 	uint8_t time = HAL_GetTick();
 	switch (state) {
@@ -541,11 +538,8 @@ void uart_log(uint8_t state) {
 	HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 200);
 }
 
-
-
-//--------interrupts functions
 unsigned int a = 0;
-=======
+
 void updateDigits()
 {
 	switch(current_state) {
@@ -564,7 +558,6 @@ void updateDigits()
 		break;
 	}
 }
->>>>>>> 665b8c5304472fa76b32e50a75588034c6018e6e
 
 //--------interrupts functions
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
@@ -597,11 +590,6 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			HAL_ADC_Start_IT(&hadc1);
 			break;
 		}
-
-
-
-
-
 	}
 	else if (htim->Instance == TIM2) {
 		if(current_state == PLAYING || current_state == CHANGING_VOLUME)
@@ -642,7 +630,6 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		}
 	}
 	updateDigits();
-
 }
 
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
