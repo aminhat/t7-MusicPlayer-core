@@ -37,6 +37,12 @@ typedef struct
     uint16_t duration;
 } Tone;
 
+typedef struct
+{
+	Tone * melody;
+	uint16_t melody_length;
+} song;
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -243,10 +249,9 @@ const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
-volatile uint16_t volume = 900; // (0 - 1000)
+volatile uint16_t volume = 10; // (0 - 1000)
 const uint8_t number_of_songs = 4;
 const uint16_t quarter_duration = 204;
-const Tone * Songs[5];
 uint8_t current_song = 0;
 
 //--------melodies
@@ -430,6 +435,12 @@ const Tone mario2[] = {
 	{ REST, 0}
 };
 
+const song songs[] = {
+		{super_mario_bros, ARRAY_LENGTH(super_mario_bros)},
+		{mario2, ARRAY_LENGTH(mario2)}
+};
+
+
 
 //--------playing songs functions
 void PWM_Start()
@@ -505,6 +516,7 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
     HAL_GPIO_WritePin(GPIOC, GPIO_PIN_12, dcpoint == 1 ? 1 : 0);
 }
 
+<<<<<<< HEAD
 
 
 void uart_log(uint8_t state) {
@@ -533,24 +545,69 @@ void uart_log(uint8_t state) {
 
 //--------interrupts functions
 unsigned int a = 0;
+=======
+void updateDigits()
+{
+	switch(current_state) {
+	case PAUSE   :
+	case PLAYING :
+		digits[0] = current_song;
+		digits[1] = 9;
+		digits[2] = 9;
+		digits[3] = 9;
+		break;
+	case CHANGING_VOLUME :
+		digits[3] = potensiometer_value % 10;
+		digits[2] = (potensiometer_value / 10) % 10;
+		digits[1] = (potensiometer_value / 100) % 10;
+		digits[0] = 0;
+		break;
+	}
+}
+>>>>>>> 665b8c5304472fa76b32e50a75588034c6018e6e
 
+//--------interrupts functions
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
-	if(htim->Instance == TIM2) {
-
-
-
-		Update_Melody();
-
+	if(htim->Instance == TIM1) {
+		// Flicker seven segment digits
 		static uint8_t i = 0;
-		display_digit(digits[i], i, 1);
-		++i;
-		i = i % 4;
+		static uint16_t blinking = 0;
 
-		HAL_ADC_Start_IT(&hadc1);
-		++a;
+		switch (current_state) {
+		case PLAYING :
+			display_digit(digits[i], i, 0);
+			++i;
+			i = i % 4;
+			break;
+		case PAUSE :
+			display_digit(digits[i], (blinking < 300) ? i : 5, 0); // digit 5 is equal to no digit so it will be off
+			++i;
+			i %= 4;
+			++blinking;
+			blinking %= 600;
+			break;
+		case CHANGING_VOLUME :
+			updateDigits();
+			display_digit(digits[i], i, 0);
+			++i;
+			i = (i % 3)+1;
+			// call adc interrupt _ it cannot be in its self interrupt handler because its priority is less
+			// than timer and seems like it will be ignored
+			HAL_ADC_Start_IT(&hadc1);
+			break;
+		}
 
 
+
+
+
+	}
+	else if (htim->Instance == TIM2) {
+		if(current_state == PLAYING || current_state == CHANGING_VOLUME)
+			Update_Melody();
+		else
+			PWM_Change_Tone(0, 0);
 	}
 }
 
@@ -563,16 +620,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	last_interrupt = HAL_GetTick();
 	if(GPIO_Pin == GPIO_PIN_11) { // C11 buttion : [.] [] []
 		if(current_state == PAUSE) {
-			current_state == PLAYING;
+			current_state = PLAYING;
 		} else if(current_state == PLAYING) {
-			current_state == PAUSE;
+			current_state = PAUSE;
 		}
 	} else if (GPIO_Pin == GPIO_PIN_10) { // C10 buttion : [] [.] []
 		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == 1) {
 			previous_state = current_state;
 			current_state = CHANGING_SONG;
 		} else {
+
 			current_state = previous_state;
+
 		}
 	} else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.]
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
@@ -582,6 +641,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = previous_state;
 		}
 	}
+	updateDigits();
 
 }
 
@@ -594,13 +654,11 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		samples_sum += val;
 		++sample_no;
 		if(sample_no == MAX_SAMPLE_NUMBER) {
-			potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER;
+			potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 			sprintf(transmit_data, "%lu\n", potensiometer_value);
 			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), HAL_MAX_DELAY);
-			digits[3] = (potensiometer_value / 40)% 10;
-			digits[2] = (potensiometer_value / 400) % 10;
-			digits[1] = (potensiometer_value / 4000) % 10;
-			digits[0] = 0;
+			volume =  potensiometer_value;
+			updateDigits();
 			sample_no = 0;
 			samples_sum = 0;
 		}
@@ -712,12 +770,14 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
-
-//  Update_Melody();
+  Update_Melody();
+  htim2.Instance->PSC = 480000;
   HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim1);
   PWM_Start();
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
-  Change_Melody(mario2, ARRAY_LENGTH(mario2));
+  Change_Melody(songs[1].melody, songs[1].melody_length);
+
   HAL_ADC_Start_IT(&hadc1);
 
   /* USER CODE END 2 */
