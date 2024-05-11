@@ -43,6 +43,7 @@ typedef struct
 	uint16_t melody_length;
 } song;
 
+
 /* USER CODE END PTD */
 
 /* Private define ------------------------------------------------------------*/
@@ -250,8 +251,16 @@ volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
-const uint8_t number_of_songs = 2;
+const uint8_t number_of_songs = 5;
 const uint16_t quarter_duration = 204;
+const uint16_t tempo2 = 2 * quarter_duration;
+const uint16_t tempo4 = quarter_duration;
+const uint16_t tempo8 = quarter_duration >> 1;
+const uint16_t tempo16 = quarter_duration >> 2;
+const uint16_t tempom4 = quarter_duration + (quarter_duration >> 1);
+const uint16_t tempom8 = (quarter_duration >> 1) + (quarter_duration >> 2);
+const uint16_t tempom16 = (quarter_duration >> 1) + (quarter_duration >> 2);
+
 uint8_t current_song = 0;
 
 //--------melodies
@@ -348,21 +357,74 @@ const Tone mario2[] = {
 	{REST, quarter_duration},
 	{NOTE_E4, quarter_duration + (quarter_duration >> 1)}, // 3
     {NOTE_A4, quarter_duration},
-	{NOTE_B4, quarter_duration}, {NOTE_AS4, quarter_duration >> 1}, {NOTE_A4, quarter_duration},
-    {NOTE_G4, (quarter_duration >> 1) + (quarter_duration >> 2)}, {NOTE_E5, (quarter_duration >> 1) + (quarter_duration >> 2)}, {NOTE_G5, (quarter_duration >> 1) + (quarter_duration >> 2)}, {NOTE_A5, quarter_duration}, {NOTE_F5, quarter_duration >> 1}, {NOTE_G5, quarter_duration >> 1},
-    {REST, quarter_duration >> 1}, {NOTE_E5, quarter_duration}, {NOTE_C5, quarter_duration >> 1}, {NOTE_D5, quarter_duration >> 1}, {NOTE_B4, quarter_duration + (quarter_duration >> 1)},
-    {NOTE_C5, quarter_duration + (quarter_duration >> 1)}, {NOTE_G4, quarter_duration >> 1}, {REST, quarter_duration}, {NOTE_E4, quarter_duration + (quarter_duration >> 1)}, // repeats from 3
-    {NOTE_A4, quarter_duration}, {NOTE_B4, quarter_duration}, {NOTE_AS4, quarter_duration >> 1}, {NOTE_A4, quarter_duration},
-    {NOTE_G4, (quarter_duration >> 1) + (quarter_duration >> 2)}, {NOTE_E5, (quarter_duration >> 1) + (quarter_duration >> 2)}, {NOTE_G5, (quarter_duration >> 1) + (quarter_duration >> 2)}, {NOTE_A5, quarter_duration}, {NOTE_F5, quarter_duration >> 1}, {NOTE_G5, quarter_duration >> 1},
-    {REST, quarter_duration >> 1}, {NOTE_E5, quarter_duration}, {NOTE_C5, quarter_duration >> 1}, {NOTE_D5, quarter_duration >> 1}, {NOTE_B4, quarter_duration + (quarter_duration >> 1)},
+	{NOTE_B4, quarter_duration},
+	{NOTE_AS4, quarter_duration >> 1},
+	{NOTE_A4, quarter_duration},
+    {NOTE_G4, (quarter_duration >> 1) + (quarter_duration >> 2)},
+	{NOTE_E5, (quarter_duration >> 1) + (quarter_duration >> 2)},
+	{NOTE_G5, (quarter_duration >> 1) + (quarter_duration >> 2)},
+	{NOTE_A5, quarter_duration},
+	{NOTE_F5, quarter_duration >> 1},
+	{NOTE_G5, quarter_duration >> 1},
+    {REST, quarter_duration >> 1},
+	{NOTE_E5, quarter_duration},
+	{NOTE_C5, quarter_duration >> 1},
+	{NOTE_D5, quarter_duration >> 1},
+	{NOTE_B4, quarter_duration + (quarter_duration >> 1)},
+    {NOTE_C5, quarter_duration + (quarter_duration >> 1)},
+	{NOTE_G4, quarter_duration >> 1},
+	{REST, quarter_duration},
+	{NOTE_E4, quarter_duration + (quarter_duration >> 1)}, // repeats from 3
+    {NOTE_A4, quarter_duration},
+	{NOTE_B4, quarter_duration},
+	{NOTE_AS4, quarter_duration >> 1},
+	{NOTE_A4, quarter_duration},
+    {NOTE_G4, (quarter_duration >> 1) + (quarter_duration >> 2)},
+	{NOTE_E5, (quarter_duration >> 1) + (quarter_duration >> 2)},
+	{NOTE_G5, (quarter_duration >> 1) + (quarter_duration >> 2)},
+	{NOTE_A5, quarter_duration}, {NOTE_F5, quarter_duration >> 1},
+	{NOTE_G5, quarter_duration >> 1},
+    {REST, quarter_duration >> 1},
+	{NOTE_E5, quarter_duration},
+	{NOTE_C5, quarter_duration >> 1},
+	{NOTE_D5, quarter_duration >> 1},
+	{NOTE_B4, quarter_duration + (quarter_duration >> 1)},
 
-    {REST, quarter_duration}, {NOTE_G5, quarter_duration >> 1}, {NOTE_FS5, quarter_duration >> 1}, {NOTE_F5, quarter_duration >> 1}, {NOTE_DS5, quarter_duration}, {NOTE_E5, quarter_duration >> 1}, //7
-    {REST, quarter_duration >> 1}, {NOTE_GS4, quarter_duration >> 1}, {NOTE_A4, quarter_duration >> 1}, {NOTE_C4, quarter_duration >> 1}, {REST, quarter_duration >> 1}, {NOTE_A4, quarter_duration >> 1}, {NOTE_C5, quarter_duration >> 1}, {NOTE_D5, quarter_duration >> 1},
-    {REST, quarter_duration}, {NOTE_DS5, quarter_duration}, {REST, quarter_duration >> 1}, {NOTE_D5, quarter_duration + (quarter_duration >> 1)},
-    {NOTE_C5, quarter_duration << 1}, {REST, quarter_duration << 1},
+    {REST, quarter_duration},
+	{NOTE_G5, quarter_duration >> 1},
+	{NOTE_FS5, quarter_duration >> 1},
+	{NOTE_F5, quarter_duration >> 1},
+	{NOTE_DS5, quarter_duration},
+	{NOTE_E5, quarter_duration >> 1}, //7
+    {REST, quarter_duration >> 1},
+	{NOTE_GS4, quarter_duration >> 1},
+	{NOTE_A4, quarter_duration >> 1},
+	{NOTE_C4, quarter_duration >> 1},
+	{REST, quarter_duration >> 1},
+	{NOTE_A4, quarter_duration >> 1},
+	{NOTE_C5, quarter_duration >> 1},
+	{NOTE_D5, quarter_duration >> 1},
+    {REST, quarter_duration},
+	{NOTE_DS5, quarter_duration},
+	{REST, quarter_duration >> 1},
+	{NOTE_D5, quarter_duration + (quarter_duration >> 1)},
+    {NOTE_C5, quarter_duration << 1},
+	{REST, quarter_duration << 1},
 
-    {REST, quarter_duration}, {NOTE_G5, quarter_duration >> 1}, {NOTE_FS5, quarter_duration >> 1}, {NOTE_F5, quarter_duration >> 1}, {NOTE_DS5, quarter_duration}, {NOTE_E5, quarter_duration >> 1}, //repeats from 7
-    {REST, quarter_duration >> 1}, {NOTE_GS4, quarter_duration >> 1}, {NOTE_A4, quarter_duration >> 1}, {NOTE_C4, quarter_duration >> 1}, {REST, quarter_duration >> 1}, {NOTE_A4, quarter_duration >> 1}, {NOTE_C5, quarter_duration >> 1}, {NOTE_D5, quarter_duration >> 1},
+    {REST, quarter_duration},
+	{NOTE_G5, quarter_duration >> 1},
+	{NOTE_FS5, quarter_duration >> 1},
+	{NOTE_F5, quarter_duration >> 1},
+	{NOTE_DS5, quarter_duration},
+	{NOTE_E5, quarter_duration >> 1}, //repeats from 7
+    {REST, quarter_duration >> 1},
+	{NOTE_GS4, quarter_duration >> 1},
+	{NOTE_A4, quarter_duration >> 1},
+	{NOTE_C4, quarter_duration >> 1},
+	{REST, quarter_duration >> 1},
+	{NOTE_A4, quarter_duration >> 1},
+	{NOTE_C5, quarter_duration >> 1},
+	{NOTE_D5, quarter_duration >> 1},
     {REST, quarter_duration}, {NOTE_DS5, quarter_duration}, {REST, quarter_duration >> 1}, {NOTE_D5, quarter_duration + (quarter_duration >> 1)},
     {NOTE_C5, quarter_duration << 1}, {REST, quarter_duration << 1},
 
@@ -435,9 +497,112 @@ const Tone mario2[] = {
 	{ REST, 0}
 };
 
+const Tone imperial_march[] = {
+	 {NOTE_A4, tempom4}, {NOTE_A4, tempom4}, {NOTE_A4, tempo16}, {NOTE_A4, tempo16}, {NOTE_A4, tempo16}, {NOTE_A4, tempo16}, {NOTE_F4, tempo8}, {REST, tempo8},
+	{NOTE_A4, tempom4}, {NOTE_A4, tempom4}, {NOTE_A4, tempo16}, {NOTE_A4, tempo16}, {NOTE_A4, tempo16}, {NOTE_A4, tempo16}, {NOTE_F4, tempo8}, {REST, tempo8},
+	{NOTE_A4, tempo4}, {NOTE_A4, tempo4}, {NOTE_A4, tempo4}, {NOTE_F4, tempom8}, {NOTE_C5, tempo16},
+	{NOTE_A4, tempo4}, {NOTE_F4, tempom8}, {NOTE_C5, tempo16}, {NOTE_A4, tempo2},
+
+	{NOTE_E5, tempo4}, {NOTE_E5, tempo4}, {NOTE_E5, tempo4}, {NOTE_F5, tempom8}, {NOTE_C5, tempo16},
+	{NOTE_A4, tempo4}, {NOTE_F4, tempom8}, {NOTE_C5, tempo16}, {NOTE_A4, tempo2},
+
+	{NOTE_A5, tempo4}, {NOTE_A4, tempom8}, {NOTE_A4, tempo16}, {NOTE_A5, tempo4}, {NOTE_GS5, tempom8}, {NOTE_G5, tempo16},
+	{NOTE_DS5, tempo16}, {NOTE_D5, tempo16}, {NOTE_DS5, tempo8}, {REST, tempo8}, {NOTE_A4, tempo8}, {NOTE_DS5, tempo4}, {NOTE_D5, tempom8}, {NOTE_CS5, tempo16},
+
+	{NOTE_C5, tempo16}, {NOTE_B4, tempo16}, {NOTE_C5, tempo16}, {REST, tempo8}, {NOTE_F4, tempo8}, {NOTE_GS4, tempo4}, {NOTE_F4, tempom8}, {NOTE_A4, tempom16},
+	{NOTE_C5, tempo4}, {NOTE_A4, tempom8}, {NOTE_C5, tempo16}, {NOTE_E5, tempo2},
+
+	{NOTE_A5, tempo4}, {NOTE_A4, tempom8}, {NOTE_A4, tempo16}, {NOTE_A5, tempo4}, {NOTE_GS5, tempom8}, {NOTE_G5, tempo16},
+	{NOTE_DS5, tempo16}, {NOTE_D5, tempo16}, {NOTE_DS5, tempo8}, {REST, tempo8}, {NOTE_A4, tempo8}, {NOTE_DS5, tempo4}, {NOTE_D5, tempom8}, {NOTE_CS5, tempo16},
+
+	{NOTE_C5, tempo16}, {NOTE_B4, tempo16}, {NOTE_C5, tempo16}, {REST, tempo8}, {NOTE_F4, tempo8}, {NOTE_GS4, tempo4}, {NOTE_F4, tempom8}, {NOTE_A4, tempom16},
+	{NOTE_A4, tempo4}, {NOTE_F4, tempom8}, {NOTE_C5, tempo16}, {NOTE_A4, tempo2}
+};
+
+const Tone pink_panther[] = {
+		{REST, 500},   // Example: a rest for 500 milliseconds
+		    {NOTE_E5, 500}, {NOTE_B4, 375}, {NOTE_C5, 125}, {NOTE_D5, 125},
+		    {NOTE_C5, 250}, {NOTE_A4, 125}, {NOTE_A4, 125}, {NOTE_A4, 250},
+		    {NOTE_E5, 500}, {NOTE_B4, 375}, {NOTE_C5, 125}, {NOTE_D5, 125},
+		    {NOTE_E5, 500}, {NOTE_D5, 375}, {NOTE_C5, 125}, {NOTE_B4, 125},
+		    {NOTE_A4, 250}, {NOTE_A4, 125}, {NOTE_A4, 125}, {NOTE_A4, 250},
+		    {NOTE_E5, 500}, {NOTE_B4, 375}, {NOTE_C5, 125}, {NOTE_D5, 125},
+		    {NOTE_C5, 250}, {NOTE_A4, 125}, {NOTE_A4, 125}, {NOTE_A4, 750}, {REST, 250},
+		    {NOTE_A4, 500}, {NOTE_D5, 375}, {NOTE_F5, 125}, {NOTE_A5, 125},
+		    {NOTE_G5, 250}, {NOTE_FS5, 125}, {NOTE_F5, 125}, {NOTE_FS5, 250},
+		    {NOTE_AS4, 500}, {NOTE_D5, 375}, {NOTE_F5, 125}, {NOTE_A5, 125},
+		    {NOTE_G5, 250}, {NOTE_FS5, 125}, {NOTE_F5, 125}, {NOTE_FS5, 500},
+		    {REST, 250}, {NOTE_AS4, 500}, {NOTE_D5, 375}, {NOTE_F5, 125}, {NOTE_A5, 125},
+		    {NOTE_G5, 250}, {NOTE_FS5, 125}, {NOTE_F5, 125}, {NOTE_FS5, 250},
+		    {NOTE_A4, 250}, {NOTE_AS4, 125}, {NOTE_A4, 125}, {NOTE_G4, 125},
+		    {NOTE_A4, 500}, {NOTE_AS4, 375}, {NOTE_A4, 125}, {NOTE_G4, 125},
+		    {NOTE_A4, 500}, {NOTE_AS4, 375}, {NOTE_A4, 125}, {NOTE_G4, 125},
+		    {NOTE_A4, 250}, {NOTE_AS4, 125}, {NOTE_A4, 125}, {NOTE_G4, 125},
+		    {REST, 500},
+};
+
+const Tone game_of_thrones[] = {
+		{NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125}, //1
+		    {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125},
+		    {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_E4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_E4, 125}, {NOTE_F4, 125},
+		    {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_E4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_E4, 125}, {NOTE_F4, 125},
+		    {NOTE_G4, 500}, {NOTE_C4, 500}, //5
+
+		    {NOTE_DS4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125}, //6
+		    {NOTE_D4, 1000}, //7 and 8
+		    {NOTE_F4, 500}, {NOTE_AS3, 500},
+		    {NOTE_DS4, 125}, {NOTE_D4, 125}, {NOTE_F4, 250}, {NOTE_AS3, 500},
+		    {NOTE_DS4, 125}, {NOTE_D4, 125}, {NOTE_C4, 1000}, //11 and 12
+
+		    //repeats from 5
+		    {NOTE_G4, 500}, {NOTE_C4, 500}, //5
+
+		    {NOTE_DS4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125}, //6
+		    {NOTE_D4, 1000}, //7 and 8
+		    {NOTE_F4, 500}, {NOTE_AS3, 500},
+		    {NOTE_DS4, 125}, {NOTE_D4, 125}, {NOTE_F4, 250}, {NOTE_AS3, 500},
+		    {NOTE_DS4, 125}, {NOTE_D4, 125}, {NOTE_C4, 1000}, //11 and 12
+		    {NOTE_G4, 500}, {NOTE_C4, 500}, //5
+
+		    {NOTE_DS4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125}, //6
+		    {NOTE_D4, 1000}, //7 and 8
+		    {NOTE_F4, 500}, {NOTE_AS3, 500},
+		    {NOTE_DS4, 125}, {NOTE_D4, 125}, {NOTE_F4, 250}, {NOTE_AS3, 500},
+		    {NOTE_DS4, 125}, {NOTE_D4, 125}, {NOTE_C4, 1000}, //11 and 12
+		    {NOTE_G4, 500}, {NOTE_C4, 500}, {NOTE_DS4, 125}, {NOTE_F4, 125}, {NOTE_G4, 250}, {NOTE_C4, 250}, {NOTE_DS4, 125}, {NOTE_F4, 125},
+
+		    {NOTE_D4, 2000}, //15
+		    {NOTE_F4, 500}, {NOTE_AS3, 500},
+		    {NOTE_D4, 250}, {NOTE_DS4, 250}, {NOTE_D4, 250}, {NOTE_AS3, 250},
+		    {NOTE_C4, 1000},
+		    {NOTE_C5, 2000},
+		    {NOTE_AS4, 2000},
+		    {NOTE_C4, 2000},
+		    {NOTE_G4, 2000},
+		    {NOTE_DS4, 2000},
+		    {NOTE_DS4, 500}, {NOTE_F4, 500},
+		    {NOTE_G4, 1000},
+
+		    {NOTE_C5, 2000}, //28
+		    {NOTE_AS4, 2000},
+		    {NOTE_C4, 2000},
+		    {NOTE_G4, 2000},
+		    {NOTE_DS4, 2000},
+		    {NOTE_DS4, 500}, {NOTE_D4, 500},
+		    {NOTE_C5, 1000}, {NOTE_G4, 1000}, {NOTE_GS4, 250}, {NOTE_AS4, 250}, {NOTE_C5, 1000}, {NOTE_G4, 1000}, {NOTE_GS4, 250}, {NOTE_AS4, 250},
+		    {NOTE_C5, 1000}, {NOTE_G4, 1000}, {NOTE_GS4, 250}, {NOTE_AS4, 250}, {NOTE_C5, 1000}, {NOTE_G4, 1000}, {NOTE_GS4, 250}, {NOTE_AS4, 250},
+
+		    {0, 500}, {NOTE_GS5, 250}, {NOTE_AS5, 250}, {NOTE_C6, 500}, {NOTE_G5, 500}, {NOTE_GS5, 250}, {NOTE_AS5, 250},
+		    {NOTE_C6, 500}, {NOTE_G5, 250}, {NOTE_GS5, 250}, {NOTE_AS5, 250}, {NOTE_C6, 500}, {NOTE_G5, 500}, {NOTE_GS5, 250}, {NOTE_AS5, 250}
+};
+
+
 const song songs[] = {
 		{super_mario_bros, ARRAY_LENGTH(super_mario_bros)},
-		{mario2, ARRAY_LENGTH(mario2)}
+		{mario2, ARRAY_LENGTH(mario2)},
+		{imperial_march, ARRAY_LENGTH(imperial_march)},
+		{pink_panther, ARRAY_LENGTH(pink_panther)},
+		{game_of_thrones, ARRAY_LENGTH(game_of_thrones)}
 };
 
 
@@ -571,6 +736,8 @@ void updateDigits()
 		digits[1] = (potensiometer_value / 100) % 10;
 		digits[0] = 0;
 		break;
+	case CHANGING_SONG :
+		digits[0] = (potensiometer_value * number_of_songs / 100);
 	}
 }
 
@@ -588,12 +755,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		switch (current_state) {
 		case PLAYING :
 			updateDigits();
-			display_digit(digits[i], i, 0);
+			display_digit(digits[i], i, i == 0);
 			++i;
 			i = i % 4;
 			break;
 		case PAUSE :
-			display_digit(digits[i], (blinking < 300) ? i : 5, 0); // digit 5 is equal to no digit so it will be off
+			display_digit(digits[i], (blinking < 300) ? i : 5, i == 0); // digit 5 is equal to no digit so it will be off
 			++i;
 			i %= 4;
 			++blinking;
@@ -606,6 +773,11 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			i = (i % 3)+1;
 			// call adc interrupt _ it cannot be in its self interrupt handler because its priority is less
 			// than timer and seems like it will be ignored
+			HAL_ADC_Start_IT(&hadc1);
+			break;
+		case CHANGING_SONG :
+			updateDigits();
+			display_digit(digits[0], 0, 0);
 			HAL_ADC_Start_IT(&hadc1);
 			break;
 		}
@@ -639,7 +811,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			previous_state = current_state;
 			current_state = CHANGING_SONG;
 		} else {
-			Change_Song(potensiometer_value * number_of_songs / 100);
+			Change_Song((potensiometer_value * number_of_songs / 100));
 			current_state = previous_state;
 
 		}
@@ -668,7 +840,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 			if(current_state == CHANGING_VOLUME) {
 				volume = potensiometer_value;
 				uart_log(4);
-			}
+			} else
+				uart_log(2);
 			sample_no = 0;
 			samples_sum = 0;
 		}
@@ -787,7 +960,8 @@ int main(void)
   PWM_Start();
 
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
-  Change_Melody(songs[0].melody, songs[0].melody_length);
+//  Change_Melody(songs[0].melody, songs[0].melody_length);
+  Change_Song(0);
   HAL_UART_Receive_IT(&huart1, &receive, 1);
   HAL_ADC_Start_IT(&hadc1);
 
