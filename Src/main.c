@@ -796,6 +796,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
+	static pin11_last_state;
+	static pin10_last_state = 0;
+	static pin15_last_state = 0;
+
 	if(HAL_GetTick() - last_interrupt < 150)
 		return;
 
@@ -808,18 +812,40 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		}
 	} else if (GPIO_Pin == GPIO_PIN_10) { // C10 buttion : [] [.] []
 		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == 1) {
+			if(pin10_last_state == 1) {
+				pin10_last_state = 0;
+				Change_Song((potensiometer_value * number_of_songs / 100));
+				current_state = previous_state;
+				return;
+			}
+			pin10_last_state = 1;
 			previous_state = current_state;
 			current_state = CHANGING_SONG;
 		} else {
+			pin10_last_state = 0;
 			Change_Song((potensiometer_value * number_of_songs / 100));
 			current_state = previous_state;
 
 		}
 	} else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.]
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
+			if(pin15_last_state == 1) {
+				pin15_last_state = 0;
+				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 0);
+				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 1);
+				current_state = previous_state;
+				return;
+			}
+			pin15_last_state = 1;
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 1);
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 0);
 			previous_state = current_state;
 			current_state = CHANGING_VOLUME;
+
 		} else {
+			pin15_last_state = 0;
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 0);
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 1);
 			current_state = previous_state;
 		}
 	}
@@ -957,6 +983,7 @@ int main(void)
   htim2.Instance->PSC = 480000;
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim1);
+
   PWM_Start();
 
 //  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
