@@ -229,7 +229,7 @@ char transmit_data[50];
 uint8_t uart_mode = 1;
 uint8_t log_state = 0;
 const char * MUSIC_SET = "MUSIC_SET";
-const char * MUSIC_SET = "CHANGE_VOLUME";
+const char * CHANGE_VOLUME = "CHANGE_VOLUME";
 
 //--------LEDs
 GPIO_TypeDef * ledg = GPIOE;
@@ -250,7 +250,7 @@ volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
-const uint8_t number_of_songs = 4;
+const uint8_t number_of_songs = 2;
 const uint16_t quarter_duration = 204;
 uint8_t current_song = 0;
 
@@ -441,6 +441,8 @@ const song songs[] = {
 };
 
 
+//-----------Functions-----------\\
+
 
 //--------playing songs functions
 void PWM_Start()
@@ -469,11 +471,20 @@ void PWM_Change_Tone(uint16_t pwm_freq, uint16_t volume) // pwm_freq (1 - 20000)
     }
 }
 
+
+void Change_Song(uint8_t song_number)
+{
+	current_song = song_number;
+	Change_Melody(songs[current_song].melody, songs[current_song].melody_length);
+}
+
+
 void Change_Melody(const Tone *melody, uint16_t tone_count)
 {
     melody_ptr = melody;
     melody_tone_count = tone_count;
     current_tone_number = 0;
+    current_tone_end = 0;
 }
 
 void Update_Melody()
@@ -484,6 +495,8 @@ void Update_Melody()
         PWM_Change_Tone(active_tone.frequency, volume);
         current_tone_end = HAL_GetTick() + active_tone.duration;
         current_tone_number++;
+    } else if(current_tone_number >= melody_tone_count) {
+    	Change_Song((current_song + 1) % number_of_songs);
     }
 }
 
@@ -517,21 +530,23 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
 }
 
 void uart_log(uint8_t state) {
-	uint8_t time = HAL_GetTick();
+	uint32_t time = HAL_GetTick();
+
 	switch (state) {
 		case 1: // inside () is wrong for MUSIC_SET
-			sprintf(transmit_data, "[ERROR][Music not found][%d]", time);
+			sprintf(transmit_data, "--[ERROR][Music not found][%d]\r\n>>", time);
 			break;
 		case 2: //music number changed
-			sprintf(transmit_data, "[INFO][Music changed to %d][%d]", current_song, time);
+			sprintf(transmit_data, "--[INFO][Music changed to %d][%d]\r\n>>", current_song, time);
 			break;
 		case 3: //
-			sprintf(transmit_data, "[ERROR][Volume not valid][%d]", time);
+			sprintf(transmit_data, "--[ERROR][Volume not valid][%d]\r\n>>", time);
 			break;
 		case 4: //
-			sprintf(transmit_data, "[INFO][Volume changed to %d][%d]", volume, time);
+			sprintf(transmit_data, "--[INFO][Volume changed to %d][%d]\r\n>>", volume, time);
 			break;
-
+		case 100:
+			sprintf(transmit_data, "--[ERROR][Invalid Command][%d]\r\n>>", time);
 		default:
 			break;
 	}
@@ -545,10 +560,10 @@ void updateDigits()
 	switch(current_state) {
 	case PAUSE   :
 	case PLAYING :
+		digits[3] = current_tone_number % 10;
+		digits[2] = (current_tone_number / 10) % 10;
+		digits[1] = (current_tone_number / 100) % 10;
 		digits[0] = current_song;
-		digits[1] = 9;
-		digits[2] = 9;
-		digits[3] = 9;
 		break;
 	case CHANGING_VOLUME :
 		digits[3] = potensiometer_value % 10;
@@ -559,7 +574,10 @@ void updateDigits()
 	}
 }
 
-//--------interrupts functions
+
+//--------Interrupts Functions--------\\
+
+//TIMERS
 void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 {
 	if(htim->Instance == TIM1) {
@@ -569,6 +587,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 
 		switch (current_state) {
 		case PLAYING :
+			updateDigits();
 			display_digit(digits[i], i, 0);
 			++i;
 			i = i % 4;
@@ -592,13 +611,16 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 	}
 	else if (htim->Instance == TIM2) {
-		if(current_state == PLAYING || current_state == CHANGING_VOLUME)
+		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME)) {
+
 			Update_Melody();
+		}
 		else
 			PWM_Change_Tone(0, 0);
 	}
 }
 
+//--------Buttons
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
@@ -617,7 +639,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			previous_state = current_state;
 			current_state = CHANGING_SONG;
 		} else {
-
+			Change_Song(potensiometer_value * number_of_songs / 100);
 			current_state = previous_state;
 
 		}
@@ -632,6 +654,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	updateDigits();
 }
 
+//--------ADC
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if(hadc->Instance == ADC1) {
 		static uint8_t sample_no = 0;
@@ -642,10 +665,10 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		++sample_no;
 		if(sample_no == MAX_SAMPLE_NUMBER) {
 			potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
-			sprintf(transmit_data, "%lu\n", potensiometer_value);
-			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), HAL_MAX_DELAY);
-			volume =  potensiometer_value;
-			updateDigits();
+			if(current_state == CHANGING_VOLUME) {
+				volume = potensiometer_value;
+				uart_log(4);
+			}
 			sample_no = 0;
 			samples_sum = 0;
 		}
@@ -653,21 +676,20 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	}
 }
 
-
-
-
+//--------UART
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
 	if(huart->Instance == USART1) {
 		HAL_UART_Receive_IT(&huart1, &receive, 1);
-		receive_data[data_index] = receive;
+		received_data[data_index] = receive;
 		++data_index;
-		if(receive == '\n') {
-			if(strcmpwithlength(receive_data, MUSIC_SET, 9)) {
+
+		if(receive == '\r') {
+			if(strcmpwithlength(received_data, MUSIC_SET, 9)) {
 				if(data_index == 13
-				    && receive_data[9] == '('
-				    && receive_data[10] >= '0' && receive_data[10] <= '9'
-				    && receive_data[11] == ')')
+				    && received_data[9] == '('
+				    && received_data[10] >= '0' && received_data[10] <= '9'
+				    && received_data[11] == ')')
 				{
 					current_song = received_data[10] - '0';
 					log_state = 2; // music number changed
@@ -677,27 +699,27 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					log_state = 1;
 				}
 
-			} else if(strcmpwithlength(received_data, CHANGING_VOLUME, 15)) {
-				if(data_index <= 21 & data_index >= 19) {
-						       if(received_data[15] == '('
+			} else if(strcmpwithlength(received_data, CHANGE_VOLUME, 13)) {
+				if(data_index <= 19 & data_index >= 17) {
+						       if(received_data[13] == '('
+								&& received_data[14] >= '0' && received_data[14] <= '9'
+								&& received_data[15] == ')') {
+						    	   volume = received_data[14] - '0';
+						    	   log_state = 4; // volume changed
+
+						       } else if(received_data[13] == '('
+								&& received_data[14] >= '0' && received_data[14] <= '9'
+								&& received_data[15] >= '0' && received_data[15] <= '9'
+								&& received_data[16] == ')') {
+						    	   volume = (received_data[14] - '0') * 10 + received_data[15] - '0';
+						    	   log_state = 4; // volume changed
+
+						       } else if(received_data[13] == '('
+								&& received_data[14] >= '0' && received_data[14] <= '9'
+								&& received_data[15] >= '0' && received_data[15] <= '9'
 								&& received_data[16] >= '0' && received_data[16] <= '9'
 								&& received_data[17] == ')') {
-						    	   volume = received_data[16] - '0';
-						    	   log_state = 4; // volume changed
-
-						       } else if(received_data[15] == '('
-								&& received_data[16] >= '0' && received_data[16] <= '9'
-								&& received_data[17] >= '0' && received_data[17] <= '9'
-								&& received_data[18] == ')') {
-						    	   volume = (received_data[16] - '0') * 10 + received_data[17] - '0';
-						    	   log_state = 4; // volume changed
-
-						       } else if(received_data[15] == '('
-								&& received_data[16] >= '0' && received_data[16] <= '9'
-								&& received_data[17] >= '0' && received_data[17] <= '9'
-								&& received_data[18] >= '0' && received_data[18] <= '9'
-								&& received_data[19] == ')') {
-						    	   volume = (received_data[16] - '0') * 100 + (received_data[17] - '0') * 10 + received_data[18] - '0';
+						    	   volume = (received_data[14] - '0') * 100 + (received_data[15] - '0') * 10 + received_data[16] - '0';
 						    	   log_state = 4; // volume changed
 						       } else {
 						    	   log_state = 3; // inside () is wrong
@@ -707,7 +729,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 					log_state = 3; // inside () is wrong
 				}
 			} else {
-//				log_state =
+				log_state = 100;
 			}
 			uart_log(log_state);
 			data_index = 0;
@@ -757,14 +779,16 @@ int main(void)
   MX_ADC1_Init();
   MX_TIM1_Init();
   /* USER CODE BEGIN 2 */
+
   Update_Melody();
   htim2.Instance->PSC = 480000;
   HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim1);
   PWM_Start();
-//  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
-  Change_Melody(songs[1].melody, songs[1].melody_length);
 
+//  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
+  Change_Melody(songs[0].melody, songs[0].melody_length);
+  HAL_UART_Receive_IT(&huart1, &receive, 1);
   HAL_ADC_Start_IT(&hadc1);
 
   /* USER CODE END 2 */
