@@ -141,6 +141,16 @@ typedef struct
 #define NOTE_DS8 4978
 #define REST      0
 
+#define C4  261
+#define D4  294
+#define E4  329
+#define F4  349
+#define G4  392
+#define A4  440
+#define B4  493
+#define C5  523
+
+
 #define MAX_SAMPLE_NUMBER 100
 
 /* USER CODE END PD */
@@ -253,7 +263,7 @@ volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
-const uint8_t number_of_songs = 5;
+const uint8_t number_of_songs = 6;
 const uint16_t quarter_duration = 204;
 const uint16_t tempo2 = 2 * quarter_duration;
 const uint16_t tempo4 = quarter_duration;
@@ -598,13 +608,32 @@ const Tone game_of_thrones[] = {
 		    {NOTE_C6, 500}, {NOTE_G5, 250}, {NOTE_GS5, 250}, {NOTE_AS5, 250}, {NOTE_C6, 500}, {NOTE_G5, 500}, {NOTE_GS5, 250}, {NOTE_AS5, 250}
 };
 
+const Tone smoothCriminal[] = {
+	{A4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150},
+	{A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150},
+	  {A4, 150}, {G4, 150}, {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150},
+	  {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150},
+	  {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150},
+	  {A4, 150}, {G4, 150}, {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150},
+	  {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150},
+	  {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150},
+	  {A4, 150}, {G4, 150}, {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150},
+	  {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150},
+	  {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150},
+	  {A4, 150}, {G4, 150}, {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150},
+	  {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}, {A4, 150}, {G4, 150},
+	  {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}
+};
+
+
 
 const song songs[] = {
 		{super_mario_bros, ARRAY_LENGTH(super_mario_bros)},
 		{mario2, ARRAY_LENGTH(mario2)},
 		{imperial_march, ARRAY_LENGTH(imperial_march)},
 		{pink_panther, ARRAY_LENGTH(pink_panther)},
-		{game_of_thrones, ARRAY_LENGTH(game_of_thrones)}
+		{game_of_thrones, ARRAY_LENGTH(game_of_thrones)},
+		{smoothCriminal, ARRAY_LENGTH(smoothCriminal)}
 };
 
 
@@ -1238,7 +1267,7 @@ static void MX_TIM1_Init(void)
 
   /* USER CODE END TIM1_Init 1 */
   htim1.Instance = TIM1;
-  htim1.Init.Prescaler = 4800;
+  htim1.Init.Prescaler = 480;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
   htim1.Init.Period = 10;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
