@@ -209,7 +209,8 @@ enum states {
 	PLAYING,
 	CHANGING_VOLUME,
 	CHANGING_SONG,
-	CHANGING_SEVEN_SEGMENT_LIGHT
+	CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME,
+	CHANGING_SEVEN_SEGMENT_LIGHT_LDR
 };
 
 //-----------Global variables-----------\\
@@ -831,11 +832,14 @@ void updateDigits()
 		break;
 	case CHANGING_SONG :
 		digits[0] = (potensiometer_value * number_of_songs / 100);
-	case CHANGING_SEVEN_SEGMENT_LIGHT :
+		break;
+	case CHANGING_SEVEN_SEGMENT_LIGHT_LDR :
+	case CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME :
 		digits[3] = potensiometer_value % 10;
 		digits[2] = (potensiometer_value / 10) % 10;
 		digits[1] = (potensiometer_value / 100) % 10;
 		digits[0] = 0;
+		break;
 	}
 }
 
@@ -878,7 +882,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			display_digit(digits[0], 0, 0);
 			HAL_ADC_Start_IT(&hadc1);
 			break;
-		case CHANGING_SEVEN_SEGMENT_LIGHT :
+		case CHANGING_SEVEN_SEGMENT_LIGHT_LDR :
+		case CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME :
 			updateDigits();
 			display_digit(digits[i], i, 0);
 			++i;
@@ -886,8 +891,14 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			HAL_ADC_Start_IT(&hadc1);
 			break;
 		}
+<<<<<<< HEAD
+	}
+	else if (htim->Instance == TIM2) {
+		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME)) {
+=======
 	} else if (htim->Instance == TIM2) {
 		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT)) {
+>>>>>>> d7f6fa849e9a26d50475593ba007f813408cf36f
 
 			Update_Melody();
 		}
@@ -905,6 +916,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	static last_interrupt = 0;
 	static pin10_last_state = 0;
 	static pin11_last_state = 0;
+	static pin12_last_state = 0;
 	static pin6_last_state = 0;
 	static pin15_last_state = 0;
 
@@ -935,7 +947,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = previous_state;
 
 		}
-	} else if (GPIO_Pin == GPIO_PIN_6) { // D12 Button [] [] [] * * [.]
+	} else if (GPIO_Pin == GPIO_PIN_6) { // F6 Button [] [] [] * * [.]
 		if(HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_6) == 1) {
 			if(pin6_last_state == 1) {
 				pin6_last_state = 0;
@@ -944,9 +956,23 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			}
 			pin6_last_state = 1;
 			previous_state = current_state;
-			current_state = CHANGING_SEVEN_SEGMENT_LIGHT;
+			current_state = CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME;
 		} else {
 			pin6_last_state = 0;
+			current_state = previous_state;
+		}
+	} else if (GPIO_Pin == GPIO_PIN_12) { // D12 Button
+		if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) == 1) {
+			if(pin12_last_state == 1) {
+				pin12_last_state = 0;
+				current_state = previous_state;
+				return;
+			}
+			pin12_last_state = 1;
+			previous_state = current_state;
+			current_state = CHANGING_SEVEN_SEGMENT_LIGHT_LDR;
+		} else {
+			pin12_last_state = 0;
 			current_state = previous_state;
 		}
 	}
@@ -954,21 +980,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
 			if(pin15_last_state == 1) {
 				pin15_last_state = 0;
-				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 0);
-				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 1);
 				current_state = previous_state;
 				return;
 			}
 			pin15_last_state = 1;
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 1);
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 0);
 			previous_state = current_state;
 			current_state = CHANGING_VOLUME;
 
 		} else {
 			pin15_last_state = 0;
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 0);
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 1);
 			current_state = previous_state;
 		}
 	}
@@ -978,28 +998,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //--------ADC
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if(hadc->Instance == ADC1) {
-		static uint8_t sample_no = 0;
-		static uint32_t samples_sum = 0;
-		static uint16_t val;
-		val = HAL_ADC_GetValue(&hadc1);
-		samples_sum += val;
-		++sample_no;
-		if(sample_no == MAX_SAMPLE_NUMBER) {
-			if(current_state == CHANGING_VOLUME) {
-				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
-				volume = potensiometer_value;
-				uart_log(4);
-			} else if(current_state == CHANGING_SONG) {
-				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
-				uart_log(2);
-			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT) {
-				potensiometer_value = 29 + (samples_sum / MAX_SAMPLE_NUMBER / 56);
-		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
-			}
-			sample_no = 0;
-			samples_sum = 0;
+
+		if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_LDR) {
+			sprintf(transmit_data, "%d\n", HAL_ADC_GetValue(&hadc1));
+//			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 100);
 		}
-	}
+//		static uint8_t sample_no = 0;
+//		static uint32_t samples_sum = 0;
+//		static uint16_t val;
+//		val = HAL_ADC_GetValue(&hadc1);
+//		samples_sum += val;
+//		++sample_no;
+//		if(sample_no == MAX_SAMPLE_NUMBER) {
+//			if(current_state == CHANGING_VOLUME) {
+//				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
+//				volume = potensiometer_value;
+//				uart_log(4);
+//			} else if(current_state == CHANGING_SONG) {
+//				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
+//				uart_log(2);
+//			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME) {
+//				potensiometer_value = 29 + (samples_sum / MAX_SAMPLE_NUMBER / 56);
+//		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
+//			}
+//			sample_no = 0;
+//			samples_sum = 0;
+//		}
+//	}
 }
 
 //--------UART
