@@ -207,7 +207,7 @@ enum states {
 	PLAYING,
 	CHANGING_VOLUME,
 	CHANGING_SONG,
-	CHANGING_7S_LIGHT
+	CHANGING_SEVEN_SEGMENT_LIGHT
 };
 
 //-----------Global variables-----------\\
@@ -258,8 +258,8 @@ uint16_t led7 = GPIO_PIN_15;
 //--------Buzzer
 TIM_HandleTypeDef *buzzer_pwm_timer = &htim2;	// Point to PWM Timer configured in CubeMX
 uint32_t buzzer_pwm_channel = TIM_CHANNEL_2;   // Select configured PWM channel number
-TIM_HandleTypeDef *7s_light_timer = &htim1;
-uint32_t 7s_light_channel = TIM_CHANNEL_1;
+TIM_HandleTypeDef *seven_segment_light_timer = &htim1;
+uint32_t seven_segment_light_channel = TIM_CHANNEL_1;
 const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
@@ -700,8 +700,8 @@ const song songs[] = {
 void PWM_Start()
 {
     HAL_TIM_PWM_Start(buzzer_pwm_timer, buzzer_pwm_channel);
-    HAL_TIM_PWM_Start(7s_light_timer, 7s_light_channel);
-    __HAL_TIM_SET_COMPARE(7s_light_timer, 7s_light_channel, 100); // buzzer_pwm_timer->Instance->CCR2 = pulse_width;
+    HAL_TIM_PWM_Start(seven_segment_light_timer, seven_segment_light_channel);
+    __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, 100); // buzzer_pwm_timer->Instance->CCR2 = pulse_width;
 
 }
 
@@ -828,7 +828,7 @@ void updateDigits()
 		break;
 	case CHANGING_SONG :
 		digits[0] = (potensiometer_value * number_of_songs / 100);
-	case CHANGING_7S_LIGHT :
+	case CHANGING_SEVEN_SEGMENT_LIGHT :
 		digits[3] = potensiometer_value % 10;
 		digits[2] = (potensiometer_value / 10) % 10;
 		digits[1] = (potensiometer_value / 100) % 10;
@@ -875,10 +875,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			display_digit(digits[0], 0, 0);
 			HAL_ADC_Start_IT(&hadc1);
 			break;
+		case CHANGING_SEVEN_SEGMENT_LIGHT :
+			updateDigits();
+			display_digit(digits[i], i, 0);
+			++i;
+			i = (i % 3)+1;
+			HAL_ADC_Start_IT(&hadc1);
+
 		}
 	}
 	else if (htim->Instance == TIM2) {
-		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME)) {
+		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT)) {
 
 			Update_Melody();
 		}
@@ -893,7 +900,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	static last_interrupt = 0;
 	static pin10_last_state = 0;
 	static pin11_last_state = 0;
-	static pin12_last_state = 0;
+	static pin6_last_state = 0;
 	static pin15_last_state = 0;
 
 	if(HAL_GetTick() - last_interrupt < 150)
@@ -923,16 +930,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = previous_state;
 
 		}
-	} else if (GPIO_Pin == GPIO_PIN_12) { // D12 Button [] [] [] * * [.]
-		if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) == 1) {
-			if(pin12_last_state == 1) {
-
+	} else if (GPIO_Pin == GPIO_PIN_6) { // D12 Button [] [] [] * * [.]
+		if(HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_6) == 1) {
+			if(pin6_last_state == 1) {
+				pin6_last_state = 0;
+				current_state = previous_state;
+				return;
 			}
-			pin12_last_state = 1;
+			pin6_last_state = 1;
 			previous_state = current_state;
-			current_state = CHANGING_7S_LIGHT;
+			current_state = CHANGING_SEVEN_SEGMENT_LIGHT;
 		} else {
-			pin12_last_state = 0;
+			pin6_last_state = 0;
 			current_state = previous_state;
 		}
 	}
@@ -971,14 +980,16 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		samples_sum += val;
 		++sample_no;
 		if(sample_no == MAX_SAMPLE_NUMBER) {
-			potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 			if(current_state == CHANGING_VOLUME) {
+				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 				volume = potensiometer_value;
 				uart_log(4);
 			} else if(current_state == CHANGING_SONG) {
+				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 				uart_log(2);
-			} else if(current_state == CHANGING_7S_LIGHT) {
-		        __HAL_TIM_SET_COMPARE(7s_light_timer, 7s_light_channel, potensiometer_value);
+			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT) {
+				potensiometer_value = 29 + (samples_sum / MAX_SAMPLE_NUMBER / 56);
+		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
 			}
 			sample_no = 0;
 			samples_sum = 0;
