@@ -234,7 +234,7 @@ uint16_t bitActive2 = GPIO_PIN_1;
 uint16_t bitActive3 = GPIO_PIN_0;
 
 //--------Digits
-uint8_t digits[4] = {0, 1, 2, 3};
+uint8_t digits[4] = {0, 0, 0, 0};
 
 //--------UART
 char received_data[50];
@@ -733,6 +733,7 @@ void PWM_Change_Tone(uint16_t pwm_freq, uint16_t volume) // pwm_freq (1 - 20000)
 void Change_Song(uint8_t song_number)
 {
 	current_song = song_number;
+	song_time_second = 0;
 	Change_Melody(songs[current_song].melody, songs[current_song].melody_length);
 }
 
@@ -788,23 +789,22 @@ void display_digit(uint8_t num, uint8_t digit, uint8_t dcpoint)
 }
 
 void uart_log(uint8_t state) {
-	uint32_t time = HAL_GetTick();
 
 	switch (state) {
 		case 1: // inside () is wrong for MUSIC_SET
-			sprintf(transmit_data, "--[ERROR][Music not found][%d]\r\n>>", time);
+			sprintf(transmit_data, "--[ERROR][Music not found][%d]\r\n>>", uart_time_second);
 			break;
 		case 2: //music number changed
-			sprintf(transmit_data, "--[INFO][Music changed to %d][%d]\r\n>>", current_song, time);
+			sprintf(transmit_data, "--[INFO][Music changed to %d][%d]\r\n>>", current_song, uart_time_second);
 			break;
 		case 3: //
-			sprintf(transmit_data, "--[ERROR][Volume not valid][%d]\r\n>>", time);
+			sprintf(transmit_data, "--[ERROR][Volume not valid][%d]\r\n>>", uart_time_second);
 			break;
 		case 4: //
-			sprintf(transmit_data, "--[INFO][Volume changed to %d][%d]\r\n>>", volume, time);
+			sprintf(transmit_data, "--[INFO][Volume changed to %d][%d]\r\n>>", volume, uart_time_second);
 			break;
 		case 100:
-			sprintf(transmit_data, "--[ERROR][Invalid Command][%d]\r\n>>", time);
+			sprintf(transmit_data, "--[ERROR][Invalid Command][%d]\r\n>>", uart_time_second);
 		default:
 			break;
 	}
@@ -818,9 +818,9 @@ void updateDigits()
 	switch(current_state) {
 	case PAUSE   :
 	case PLAYING :
-		digits[3] = current_tone_number % 10;
-		digits[2] = (current_tone_number / 10) % 10;
-		digits[1] = (current_tone_number / 100) % 10;
+		digits[3] = song_time_second % 10;
+		digits[2] = (song_time_second / 10) % 10;
+		digits[1] = (song_time_second / 100) % 10;
 		digits[0] = current_song;
 		break;
 	case CHANGING_VOLUME :
@@ -884,7 +884,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			++i;
 			i = (i % 3)+1;
 			HAL_ADC_Start_IT(&hadc1);
-
+			break;
 		}
 	} else if (htim->Instance == TIM2) {
 		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT)) {
@@ -894,7 +894,7 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		else
 			PWM_Change_Tone(0, 0);
 	} else if(htim->Instance == TIM3) {
-		++song_time_second;
+		song_time_second += current_state == PLAYING;
 		++uart_time_second;
 	}
 }
@@ -1111,8 +1111,9 @@ int main(void)
 
   Update_Melody();
   htim2.Instance->PSC = 480000;
-  HAL_TIM_Base_Start_IT(&htim2);
   HAL_TIM_Base_Start_IT(&htim1);
+  HAL_TIM_Base_Start_IT(&htim2);
+  HAL_TIM_Base_Start_IT(&htim3);
 
   PWM_Start();
 
