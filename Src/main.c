@@ -207,7 +207,7 @@ enum states {
 	PLAYING,
 	CHANGING_VOLUME,
 	CHANGING_SONG,
-	CHANGING_seven_segment_light
+	CHANGING_SEVEN_SEGMENT_LIGHT
 };
 
 //-----------Global variables-----------\\
@@ -825,7 +825,7 @@ void updateDigits()
 		break;
 	case CHANGING_SONG :
 		digits[0] = (potensiometer_value * number_of_songs / 100);
-	case CHANGING_seven_segment_light :
+	case CHANGING_SEVEN_SEGMENT_LIGHT :
 		digits[3] = potensiometer_value % 10;
 		digits[2] = (potensiometer_value / 10) % 10;
 		digits[1] = (potensiometer_value / 100) % 10;
@@ -890,7 +890,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 	static last_interrupt = 0;
 	static pin10_last_state = 0;
 	static pin11_last_state = 0;
-	static pin12_last_state = 0;
+	static pin6_last_state = 0;
 	static pin15_last_state = 0;
 
 	if(HAL_GetTick() - last_interrupt < 150)
@@ -920,16 +920,18 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = previous_state;
 
 		}
-	} else if (GPIO_Pin == GPIO_PIN_12) { // D12 Button [] [] [] * * [.]
-		if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) == 1) {
-			if(pin12_last_state == 1) {
-
+	} else if (GPIO_Pin == GPIO_PIN_6) { // D12 Button [] [] [] * * [.]
+		if(HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_6) == 1) {
+			if(pin6_last_state == 1) {
+				pin6_last_state = 0;
+				current_state = previous_state;
+				return;
 			}
-			pin12_last_state = 1;
+			pin6_last_state = 1;
 			previous_state = current_state;
-			current_state = CHANGING_seven_segment_light;
+			current_state = CHANGING_SEVEN_SEGMENT_LIGHT;
 		} else {
-			pin12_last_state = 0;
+			pin6_last_state = 0;
 			current_state = previous_state;
 		}
 	}
@@ -974,7 +976,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 				uart_log(4);
 			} else if(current_state == CHANGING_SONG) {
 				uart_log(2);
-			} else if(current_state == CHANGING_seven_segment_light) {
+			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT) {
 		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
 			}
 			sample_no = 0;
