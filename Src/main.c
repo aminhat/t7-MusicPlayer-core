@@ -150,7 +150,7 @@ typedef struct
 #define B4  493
 #define C5  523
 
-
+#define MAX_TIMER_VALUE 100
 #define MAX_SAMPLE_NUMBER 100
 
 /* USER CODE END PD */
@@ -173,6 +173,7 @@ TIM_HandleTypeDef htim2;
 TIM_HandleTypeDef htim3;
 
 UART_HandleTypeDef huart1;
+UART_HandleTypeDef huart3;
 
 PCD_HandleTypeDef hpcd_USB_FS;
 
@@ -192,6 +193,7 @@ static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_ADC2_Init(void);
 static void MX_USART1_UART_Init(void);
+static void MX_USART3_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -246,6 +248,7 @@ uint8_t uart_mode = 1;
 uint8_t log_state = 0;
 const char * MUSIC_SET = "MUSIC_SET";
 const char * CHANGE_VOLUME = "CHANGE_VOLUME";
+const char * PAUSE_AFTER = "PAUSE_AFTER";
 
 //--------LEDs
 GPIO_TypeDef * ledg = GPIOE;
@@ -277,12 +280,13 @@ const uint16_t tempo16 = quarter_duration >> 2;
 const uint16_t tempom4 = quarter_duration + (quarter_duration >> 1);
 const uint16_t tempom8 = (quarter_duration >> 1) + (quarter_duration >> 2);
 const uint16_t tempom16 = (quarter_duration >> 1) + (quarter_duration >> 2);
-
 uint8_t current_song = 0;
 
 //--------Times
 uint8_t song_time_second = 0;
+uint8_t pause_time_second = 0;
 uint8_t uart_time_second = 0;
+
 
 //--------melodies
 const Tone super_mario_bros[] = {
@@ -1085,7 +1089,11 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				} else {
 					log_state = 3; // inside () is wrong
 				}
+			} else if (strcmpwithlength(received_data, PAUSE_AFTER, 11)){
+//				if(data_index <= )
+
 			} else {
+			}
 				log_state = 100;
 			}
 			uart_log(log_state);
@@ -1137,6 +1145,7 @@ int main(void)
   MX_TIM3_Init();
   MX_ADC2_Init();
   MX_USART1_UART_Init();
+  MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
 
   Update_Melody();
@@ -1204,9 +1213,10 @@ void SystemClock_Config(void)
     Error_Handler();
   }
   PeriphClkInit.PeriphClockSelection = RCC_PERIPHCLK_USB|RCC_PERIPHCLK_USART1
-                              |RCC_PERIPHCLK_I2C1|RCC_PERIPHCLK_TIM1
-                              |RCC_PERIPHCLK_ADC12;
+                              |RCC_PERIPHCLK_USART3|RCC_PERIPHCLK_I2C1
+                              |RCC_PERIPHCLK_TIM1|RCC_PERIPHCLK_ADC12;
   PeriphClkInit.Usart1ClockSelection = RCC_USART1CLKSOURCE_PCLK2;
+  PeriphClkInit.Usart3ClockSelection = RCC_USART3CLKSOURCE_PCLK1;
   PeriphClkInit.Adc12ClockSelection = RCC_ADC12PLLCLK_DIV1;
   PeriphClkInit.I2c1ClockSelection = RCC_I2C1CLKSOURCE_HSI;
   PeriphClkInit.USBClockSelection = RCC_USBCLKSOURCE_PLL;
@@ -1648,6 +1658,41 @@ static void MX_USART1_UART_Init(void)
 }
 
 /**
+  * @brief USART3 Initialization Function
+  * @param None
+  * @retval None
+  */
+static void MX_USART3_UART_Init(void)
+{
+
+  /* USER CODE BEGIN USART3_Init 0 */
+
+  /* USER CODE END USART3_Init 0 */
+
+  /* USER CODE BEGIN USART3_Init 1 */
+
+  /* USER CODE END USART3_Init 1 */
+  huart3.Instance = USART3;
+  huart3.Init.BaudRate = 9600;
+  huart3.Init.WordLength = UART_WORDLENGTH_8B;
+  huart3.Init.StopBits = UART_STOPBITS_1;
+  huart3.Init.Parity = UART_PARITY_NONE;
+  huart3.Init.Mode = UART_MODE_TX_RX;
+  huart3.Init.HwFlowCtl = UART_HWCONTROL_NONE;
+  huart3.Init.OverSampling = UART_OVERSAMPLING_16;
+  huart3.Init.OneBitSampling = UART_ONE_BIT_SAMPLE_DISABLE;
+  huart3.AdvancedInit.AdvFeatureInit = UART_ADVFEATURE_NO_INIT;
+  if (HAL_UART_Init(&huart3) != HAL_OK)
+  {
+    Error_Handler();
+  }
+  /* USER CODE BEGIN USART3_Init 2 */
+
+  /* USER CODE END USART3_Init 2 */
+
+}
+
+/**
   * @brief USB Initialization Function
   * @param None
   * @retval None
@@ -1694,8 +1739,8 @@ static void MX_GPIO_Init(void)
   __HAL_RCC_GPIOC_CLK_ENABLE();
   __HAL_RCC_GPIOF_CLK_ENABLE();
   __HAL_RCC_GPIOA_CLK_ENABLE();
-  __HAL_RCC_GPIOD_CLK_ENABLE();
   __HAL_RCC_GPIOB_CLK_ENABLE();
+  __HAL_RCC_GPIOD_CLK_ENABLE();
 
   /*Configure GPIO pin Output Level */
   HAL_GPIO_WritePin(GPIOE, CS_I2C_SPI_Pin|LD4_Pin|LD3_Pin|LD5_Pin
