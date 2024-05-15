@@ -825,11 +825,13 @@ void updateDigits()
 		break;
 	case CHANGING_SONG :
 		digits[0] = (potensiometer_value * number_of_songs / 100);
+		break;
 	case CHANGING_SEVEN_SEGMENT_LIGHT :
 		digits[3] = potensiometer_value % 10;
 		digits[2] = (potensiometer_value / 10) % 10;
 		digits[1] = (potensiometer_value / 100) % 10;
 		digits[0] = 0;
+		break;
 	}
 }
 
@@ -946,21 +948,15 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
 			if(pin15_last_state == 1) {
 				pin15_last_state = 0;
-				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 0);
-				HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 1);
 				current_state = previous_state;
 				return;
 			}
 			pin15_last_state = 1;
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 1);
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 0);
 			previous_state = current_state;
 			current_state = CHANGING_VOLUME;
 
 		} else {
 			pin15_last_state = 0;
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 0);
-			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_9, 1);
 			current_state = previous_state;
 		}
 	}
