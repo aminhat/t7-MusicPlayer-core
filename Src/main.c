@@ -258,6 +258,8 @@ uint16_t led7 = GPIO_PIN_15;
 //--------Buzzer
 TIM_HandleTypeDef *buzzer_pwm_timer = &htim2;	// Point to PWM Timer configured in CubeMX
 uint32_t buzzer_pwm_channel = TIM_CHANNEL_2;   // Select configured PWM channel number
+TIM_HandleTypeDef *7s_light_timer = &htim1;
+uint32_t 7s_light_channel = TIM_CHANNEL_1;
 const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
@@ -695,6 +697,9 @@ const song songs[] = {
 void PWM_Start()
 {
     HAL_TIM_PWM_Start(buzzer_pwm_timer, buzzer_pwm_channel);
+    HAL_TIM_PWM_Start(7s_light_timer, 7s_light_channel);
+    __HAL_TIM_SET_COMPARE(7s_light_timer, 7s_light_channel, 100); // buzzer_pwm_timer->Instance->CCR2 = pulse_width;
+
 }
 
 void PWM_Change_Tone(uint16_t pwm_freq, uint16_t volume) // pwm_freq (1 - 20000), volume (0 - 1000)
@@ -813,13 +818,18 @@ void updateDigits()
 		digits[0] = current_song;
 		break;
 	case CHANGING_VOLUME :
-		digits[3] = potensiometer_value % 10;
-		digits[2] = (potensiometer_value / 10) % 10;
-		digits[1] = (potensiometer_value / 100) % 10;
+		digits[3] = volume % 10;
+		digits[2] = (volume / 10) % 10;
+		digits[1] = (volume / 100) % 10;
 		digits[0] = 0;
 		break;
 	case CHANGING_SONG :
 		digits[0] = (potensiometer_value * number_of_songs / 100);
+	case CHANGING_7S_LIGHT :
+		digits[3] = potensiometer_value % 10;
+		digits[2] = (potensiometer_value / 10) % 10;
+		digits[1] = (potensiometer_value / 100) % 10;
+		digits[0] = 0;
 	}
 }
 
@@ -878,8 +888,9 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 {
 	static last_interrupt = 0;
-	static pin11_last_state;
 	static pin10_last_state = 0;
+	static pin11_last_state = 0;
+	static pin12_last_state = 0;
 	static pin15_last_state = 0;
 
 	if(HAL_GetTick() - last_interrupt < 150)
@@ -909,7 +920,20 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = previous_state;
 
 		}
-	} else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.]
+	} else if (GPIO_Pin == GPIO_PIN_12) { // D12 Button [] [] [] * * [.]
+		if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) == 1) {
+			if(pin12_last_state == 1) {
+
+			}
+			pin12_last_state = 1;
+			previous_state = current_state;
+			current_state = CHANGING_7S_LIGHT;
+		} else {
+			pin12_last_state = 0;
+			current_state = previous_state;
+		}
+	}
+	else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.]
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
 			if(pin15_last_state == 1) {
 				pin15_last_state = 0;
@@ -950,6 +974,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 				uart_log(4);
 			} else if(current_state == CHANGING_SONG) {
 				uart_log(2);
+			} else if(current_state == CHANGING_7S_LIGHT) {
+		        __HAL_TIM_SET_COMPARE(7s_light_timer, 7s_light_channel, potensiometer_value);
 			}
 			sample_no = 0;
 			samples_sum = 0;
@@ -1077,7 +1103,6 @@ int main(void)
   HAL_ADC_Start_IT(&hadc1);
 
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
-  TIM1->CCR1 = 10;
   /* USER CODE END 2 */
 
   /* Infinite loop */
