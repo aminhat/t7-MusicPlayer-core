@@ -872,10 +872,17 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			display_digit(digits[0], 0, 0);
 			HAL_ADC_Start_IT(&hadc1);
 			break;
+		case CHANGING_SEVEN_SEGMENT_LIGHT :
+			updateDigits();
+			display_digit(digits[i], i, 0);
+			++i;
+			i = (i % 3)+1;
+			HAL_ADC_Start_IT(&hadc1);
+
 		}
 	}
 	else if (htim->Instance == TIM2) {
-		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME)) {
+		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT)) {
 
 			Update_Melody();
 		}
@@ -970,13 +977,15 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 		samples_sum += val;
 		++sample_no;
 		if(sample_no == MAX_SAMPLE_NUMBER) {
-			potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 			if(current_state == CHANGING_VOLUME) {
+				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 				volume = potensiometer_value;
 				uart_log(4);
 			} else if(current_state == CHANGING_SONG) {
+				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
 				uart_log(2);
 			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT) {
+				potensiometer_value = 29 + (samples_sum / MAX_SAMPLE_NUMBER / 56);
 		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
 			}
 			sample_no = 0;
