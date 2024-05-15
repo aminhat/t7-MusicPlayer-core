@@ -1102,7 +1102,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 //				if(data_index <= )
 
 			} else {
-			}
+
 				log_state = 100;
 			}
 			uart_log(log_state);
@@ -1167,7 +1167,7 @@ int main(void)
 
   Change_Song(0);
   HAL_UART_Receive_IT(&huart1, &receive, 1);
-  HAL_UART_Transmit(&huart1, "salaaaam",8, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart3, "salaaaam",8, HAL_MAX_DELAY);
 //  HAL_UART_Transmit_IT(&huart1, "sal", 3);
   /* USER CODE END 2 */
 
