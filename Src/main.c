@@ -894,11 +894,10 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 <<<<<<< HEAD
 	}
 	else if (htim->Instance == TIM2) {
-		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME)) {
-=======
-	} else if (htim->Instance == TIM2) {
-		if(current_state == PLAYING || (previous_state == PLAYING && current_state == CHANGING_VOLUME) || (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT)) {
->>>>>>> d7f6fa849e9a26d50475593ba007f813408cf36f
+		if(current_state == PLAYING ||
+		  (previous_state == PLAYING && current_state == CHANGING_VOLUME) ||
+		  (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME))
+		  {
 
 			Update_Melody();
 		}
