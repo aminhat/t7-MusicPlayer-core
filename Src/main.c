@@ -263,7 +263,7 @@ volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
-const uint8_t number_of_songs = 6;
+const uint8_t number_of_songs = 7;
 const uint16_t quarter_duration = 204;
 const uint16_t tempo2 = 2 * quarter_duration;
 const uint16_t tempo4 = quarter_duration;
@@ -625,6 +625,16 @@ const Tone smoothCriminal[] = {
 	  {A4, 150}, {G4, 150}, {F4, 150}, {A4, 150}, {A4, 150}, {G4, 150}, {A4, 150}
 };
 
+const Tone melody7[] = {
+    {NOTE_G4, 500}, {NOTE_C5, 500}, {NOTE_D5, 500}, {NOTE_E5, 500}, {NOTE_D5, 500}, {NOTE_C5, 500}, {NOTE_B4, 500}, {NOTE_A4, 500},
+    {NOTE_G4, 500}, {NOTE_D5, 500}, {NOTE_E5, 500}, {NOTE_F5, 500}, {NOTE_E5, 500}, {NOTE_D5, 500}, {NOTE_C5, 500}, {NOTE_B4, 500},
+    {NOTE_A4, 500}, {NOTE_E5, 500}, {NOTE_F5, 500}, {NOTE_G5, 500}, {NOTE_F5, 500}, {NOTE_E5, 500}, {NOTE_D5, 500}, {NOTE_C5, 500},
+    {NOTE_B4, 500}, {NOTE_G4, 500}, {NOTE_A4, 500}, {NOTE_B4, 500}, {NOTE_A4, 500}, {NOTE_G4, 500}, {NOTE_F4, 500}, {NOTE_G4, 500},
+    // Additional notes for more melody
+    {NOTE_C5, 500}, {NOTE_E5, 500}, {NOTE_G5, 500}, {NOTE_A5, 500}, {NOTE_B5, 500}, {NOTE_A5, 500}, {NOTE_G5, 500}, {NOTE_F5, 500},
+    {NOTE_E5, 500}, {NOTE_D5, 500}, {NOTE_C5, 500}, {NOTE_B4, 500}, {NOTE_A4, 500}, {NOTE_G4, 500}, {NOTE_F4, 500}, {NOTE_E4, 500}
+};
+
 
 
 const song songs[] = {
@@ -633,7 +643,8 @@ const song songs[] = {
 		{imperial_march, ARRAY_LENGTH(imperial_march)},
 		{pink_panther, ARRAY_LENGTH(pink_panther)},
 		{game_of_thrones, ARRAY_LENGTH(game_of_thrones)},
-		{smoothCriminal, ARRAY_LENGTH(smoothCriminal)}
+		{smoothCriminal, ARRAY_LENGTH(smoothCriminal)},
+		{melody7, ARRAY_LENGTH(melody7)}
 };
 
 
@@ -1269,7 +1280,7 @@ static void MX_TIM1_Init(void)
   htim1.Instance = TIM1;
   htim1.Init.Prescaler = 480;
   htim1.Init.CounterMode = TIM_COUNTERMODE_UP;
-  htim1.Init.Period = 10;
+  htim1.Init.Period = 100;
   htim1.Init.ClockDivision = TIM_CLOCKDIVISION_DIV1;
   htim1.Init.RepetitionCounter = 0;
   htim1.Init.AutoReloadPreload = TIM_AUTORELOAD_PRELOAD_DISABLE;
