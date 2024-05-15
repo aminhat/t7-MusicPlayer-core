@@ -883,6 +883,12 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 			HAL_ADC_Start_IT(&hadc1);
 			break;
 		case CHANGING_SEVEN_SEGMENT_LIGHT_LDR :
+			updateDigits();
+			display_digit(digits[i], i, 0);
+			++i;
+			i = (i % 3)+1;
+			HAL_ADC_Start_IT(&hadc2);
+			break;
 		case CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME :
 			updateDigits();
 			display_digit(digits[i], i, 0);
@@ -997,33 +1003,33 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 //--------ADC
 void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 	if(hadc->Instance == ADC1) {
-
-		if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_LDR) {
-			sprintf(transmit_data, "%d\n", HAL_ADC_GetValue(&hadc1));
-//			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 100);
+		static uint8_t sample_no = 0;
+		static uint32_t samples_sum = 0;
+		static uint16_t val;
+		val = HAL_ADC_GetValue(&hadc1);
+		samples_sum += val;
+		++sample_no;
+		if(sample_no == MAX_SAMPLE_NUMBER) {
+			if(current_state == CHANGING_VOLUME) {
+				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
+				volume = potensiometer_value;
+				uart_log(4);
+			} else if(current_state == CHANGING_SONG) {
+				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
+				uart_log(2);
+			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME) {
+				potensiometer_value = 29 + (samples_sum / MAX_SAMPLE_NUMBER / 56);
+		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
+			}
+			sample_no = 0;
+			samples_sum = 0;
 		}
-//		static uint8_t sample_no = 0;
-//		static uint32_t samples_sum = 0;
-//		static uint16_t val;
-//		val = HAL_ADC_GetValue(&hadc1);
-//		samples_sum += val;
-//		++sample_no;
-//		if(sample_no == MAX_SAMPLE_NUMBER) {
-//			if(current_state == CHANGING_VOLUME) {
-//				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
-//				volume = potensiometer_value;
-//				uart_log(4);
-//			} else if(current_state == CHANGING_SONG) {
-//				potensiometer_value = samples_sum / MAX_SAMPLE_NUMBER / 40;
-//				uart_log(2);
-//			} else if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME) {
-//				potensiometer_value = 29 + (samples_sum / MAX_SAMPLE_NUMBER / 56);
-//		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
-//			}
-//			sample_no = 0;
-//			samples_sum = 0;
-//		}
-//	}
+	} else if(hadc->Instance == ADC2) {
+		if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_LDR) {
+			sprintf(transmit_data, "%d\n", HAL_ADC_GetValue(&hadc2));
+			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 100);
+		}
+	}
 }
 
 //--------UART
@@ -1141,12 +1147,9 @@ int main(void)
 
   PWM_Start();
 
-//  Change_Melody(super_mario_bros, ARRAY_LENGTH(super_mario_bros));
-//  Change_Melody(songs[0].melody, songs[0].melody_length);
   Change_Song(0);
   HAL_UART_Receive_IT(&huart1, &receive, 1);
-  HAL_ADC_Start_IT(&hadc1);
-
+  HAL_UART_Transmit(&huart1, "salaaaam",8, HAL_MAX_DELAY);
   HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
   /* USER CODE END 2 */
 
