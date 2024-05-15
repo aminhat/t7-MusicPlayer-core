@@ -1029,9 +1029,18 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 			samples_sum = 0;
 		}
 	} else if(hadc->Instance == ADC2) {
-		if(current_state == CHANGING_SEVEN_SEGMENT_LIGHT_LDR) {
-			sprintf(transmit_data, "%d\n", HAL_ADC_GetValue(&hadc2));
-			HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 100);
+		static uint8_t sample_no = 0;
+		static uint32_t samples_sum = 0;
+		static uint16_t val;
+		val = HAL_ADC_GetValue(&hadc2);
+		samples_sum += val;
+		++sample_no;
+		if(sample_no == MAX_SAMPLE_NUMBER) {
+			potensiometer_value = 100 - (samples_sum / MAX_SAMPLE_NUMBER / 56);
+	        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
+			HAL_GPIO_WritePin(GPIOE, GPIO_PIN_8, 1);
+			sample_no = 0;
+			samples_sum = 0;
 		}
 	}
 }
