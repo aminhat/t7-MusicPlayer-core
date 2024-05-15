@@ -187,11 +187,11 @@ static void MX_I2C1_Init(void);
 static void MX_SPI1_Init(void);
 static void MX_USB_PCD_Init(void);
 static void MX_TIM2_Init(void);
-static void MX_USART1_UART_Init(void);
 static void MX_ADC1_Init(void);
 static void MX_TIM1_Init(void);
 static void MX_TIM3_Init(void);
 static void MX_ADC2_Init(void);
+static void MX_USART1_UART_Init(void);
 /* USER CODE BEGIN PFP */
 
 /* USER CODE END PFP */
@@ -262,7 +262,7 @@ uint16_t led7 = GPIO_PIN_15;
 TIM_HandleTypeDef *buzzer_pwm_timer = &htim2;	// Point to PWM Timer configured in CubeMX
 uint32_t buzzer_pwm_channel = TIM_CHANNEL_2;   // Select configured PWM channel number
 TIM_HandleTypeDef *seven_segment_light_timer = &htim1;
-uint32_t seven_segment_light_channel = TIM_CHANNEL_1;
+uint32_t seven_segment_light_channel = TIM_CHANNEL_3;
 const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
@@ -1132,11 +1132,11 @@ int main(void)
   MX_SPI1_Init();
   MX_USB_PCD_Init();
   MX_TIM2_Init();
-  MX_USART1_UART_Init();
   MX_ADC1_Init();
   MX_TIM1_Init();
   MX_TIM3_Init();
   MX_ADC2_Init();
+  MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
 
   Update_Melody();
@@ -1150,7 +1150,7 @@ int main(void)
   Change_Song(0);
   HAL_UART_Receive_IT(&huart1, &receive, 1);
   HAL_UART_Transmit(&huart1, "salaaaam",8, HAL_MAX_DELAY);
-  HAL_TIM_PWM_Start(&htim1, TIM_CHANNEL_1);
+//  HAL_UART_Transmit_IT(&huart1, "sal", 3);
   /* USER CODE END 2 */
 
   /* Infinite loop */
@@ -1482,7 +1482,7 @@ static void MX_TIM1_Init(void)
   sConfigOC.OCFastMode = TIM_OCFAST_DISABLE;
   sConfigOC.OCIdleState = TIM_OCIDLESTATE_RESET;
   sConfigOC.OCNIdleState = TIM_OCNIDLESTATE_RESET;
-  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_1) != HAL_OK)
+  if (HAL_TIM_PWM_ConfigChannel(&htim1, &sConfigOC, TIM_CHANNEL_3) != HAL_OK)
   {
     Error_Handler();
   }
