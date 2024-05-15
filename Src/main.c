@@ -197,7 +197,7 @@ enum states {
 	PLAYING,
 	CHANGING_VOLUME,
 	CHANGING_SONG,
-
+	CHANGING_7S_LIGHT
 };
 
 //-----------Global variables-----------\\
@@ -868,12 +868,12 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 			if(current_state == CHANGING_VOLUME) {
 				volume = potensiometer_value;
 				uart_log(4);
-			} else
+			} else if(current_state == CHANGING_SONG) {
 				uart_log(2);
+			} else if(current_state == )
 			sample_no = 0;
 			samples_sum = 0;
 		}
-
 	}
 }
 
