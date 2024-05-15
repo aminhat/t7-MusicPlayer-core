@@ -263,7 +263,7 @@ volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
-const uint8_t number_of_songs = 7;
+const uint8_t number_of_songs = 9;
 const uint16_t quarter_duration = 204;
 const uint16_t tempo2 = 2 * quarter_duration;
 const uint16_t tempo4 = quarter_duration;
@@ -635,7 +635,45 @@ const Tone melody7[] = {
     {NOTE_E5, 500}, {NOTE_D5, 500}, {NOTE_C5, 500}, {NOTE_B4, 500}, {NOTE_A4, 500}, {NOTE_G4, 500}, {NOTE_F4, 500}, {NOTE_E4, 500}
 };
 
+const Tone lastofus_melody[] = {
+	    {NOTE_E4, 400}, {NOTE_G4, 200}, {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_C5, 800}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_E4, 400}, {NOTE_G4, 200}, {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_C5, 800}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_E4, 400}, {NOTE_G4, 200}, {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_C5, 800}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_E4, 400}, {NOTE_G4, 200}, {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400},
+	    {NOTE_A4, 400}, {NOTE_B4, 400}, {NOTE_C5, 800}, {NOTE_B4, 400}, {NOTE_A4, 400}, {NOTE_G4, 400}
+	};
 
+const Tone ode_to_joy_melody_extended[] = {
+    // First repetition
+    // (Same as the original melody)
+    {NOTE_E5, 400}, {NOTE_E5, 400}, {NOTE_F5, 400}, {NOTE_G5, 400}, {NOTE_G5, 400}, {NOTE_F5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400},
+    {NOTE_C5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400}, {NOTE_D5, 400},
+
+    // Second repetition with variation
+    {NOTE_E5, 400}, {NOTE_E5, 400}, {NOTE_F5, 400}, {NOTE_G5, 400}, {NOTE_G5, 400}, {NOTE_F5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400},
+    {NOTE_C5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400}, {NOTE_C5, 400}, {NOTE_C5, 400},
+
+    // Third repetition with variation
+    {NOTE_D5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_F5, 400}, {NOTE_E5, 400},
+    {NOTE_D5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_G4, 400}, {NOTE_F5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400},
+
+    // Fourth repetition with variation
+    {NOTE_E5, 400}, {NOTE_E5, 400}, {NOTE_F5, 400}, {NOTE_G5, 400}, {NOTE_G5, 400}, {NOTE_F5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400},
+    {NOTE_C5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400}, {NOTE_C5, 400}, {NOTE_C5, 400},
+
+    // Fifth repetition with variation
+    // (Same as the second repetition)
+    {NOTE_E5, 400}, {NOTE_E5, 400}, {NOTE_F5, 400}, {NOTE_G5, 400}, {NOTE_G5, 400}, {NOTE_F5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400},
+    {NOTE_C5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400}, {NOTE_C5, 400}, {NOTE_C5, 400},
+
+    // Sixth repetition with variation
+    // (Same as the third repetition)
+    {NOTE_D5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_E5, 400}, {NOTE_F5, 400}, {NOTE_E5, 400},
+    {NOTE_D5, 400}, {NOTE_C5, 400}, {NOTE_D5, 400}, {NOTE_G4, 400}, {NOTE_F5, 400}, {NOTE_E5, 400}, {NOTE_D5, 400}
+};
 
 const song songs[] = {
 		{super_mario_bros, ARRAY_LENGTH(super_mario_bros)},
@@ -644,7 +682,9 @@ const song songs[] = {
 		{pink_panther, ARRAY_LENGTH(pink_panther)},
 		{game_of_thrones, ARRAY_LENGTH(game_of_thrones)},
 		{smoothCriminal, ARRAY_LENGTH(smoothCriminal)},
-		{melody7, ARRAY_LENGTH(melody7)}
+		{melody7, ARRAY_LENGTH(melody7)},
+		{lastofus_melody, ARRAY_LENGTH(lastofus_melody)},
+		{ode_to_joy_melody_extended, ARRAY_LENGTH(ode_to_joy_melody_extended)}
 };
 
 
@@ -910,7 +950,7 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 				uart_log(4);
 			} else if(current_state == CHANGING_SONG) {
 				uart_log(2);
-			} else if(current_state == )
+			}
 			sample_no = 0;
 			samples_sum = 0;
 		}
@@ -932,7 +972,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				    && received_data[10] >= '0' && received_data[10] <= '9'
 				    && received_data[11] == ')')
 				{
-					current_song = received_data[10] - '0';
+					Change_Song(received_data[10] - '0');
+
 					log_state = 2; // music number changed
 
 
