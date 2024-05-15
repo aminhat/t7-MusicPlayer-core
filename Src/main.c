@@ -207,7 +207,7 @@ enum states {
 	PLAYING,
 	CHANGING_VOLUME,
 	CHANGING_SONG,
-	CHANGING_7S_LIGHT
+	CHANGING_seven_segment_light
 };
 
 //-----------Global variables-----------\\
@@ -258,8 +258,8 @@ uint16_t led7 = GPIO_PIN_15;
 //--------Buzzer
 TIM_HandleTypeDef *buzzer_pwm_timer = &htim2;	// Point to PWM Timer configured in CubeMX
 uint32_t buzzer_pwm_channel = TIM_CHANNEL_2;   // Select configured PWM channel number
-TIM_HandleTypeDef *7s_light_timer = &htim1;
-uint32_t 7s_light_channel = TIM_CHANNEL_1;
+TIM_HandleTypeDef *seven_segment_light_timer = &htim1;
+uint32_t seven_segment_light_channel = TIM_CHANNEL_1;
 const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
@@ -697,8 +697,8 @@ const song songs[] = {
 void PWM_Start()
 {
     HAL_TIM_PWM_Start(buzzer_pwm_timer, buzzer_pwm_channel);
-    HAL_TIM_PWM_Start(7s_light_timer, 7s_light_channel);
-    __HAL_TIM_SET_COMPARE(7s_light_timer, 7s_light_channel, 100); // buzzer_pwm_timer->Instance->CCR2 = pulse_width;
+    HAL_TIM_PWM_Start(seven_segment_light_timer, seven_segment_light_channel);
+    __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, 100); // buzzer_pwm_timer->Instance->CCR2 = pulse_width;
 
 }
 
@@ -825,7 +825,7 @@ void updateDigits()
 		break;
 	case CHANGING_SONG :
 		digits[0] = (potensiometer_value * number_of_songs / 100);
-	case CHANGING_7S_LIGHT :
+	case CHANGING_seven_segment_light :
 		digits[3] = potensiometer_value % 10;
 		digits[2] = (potensiometer_value / 10) % 10;
 		digits[1] = (potensiometer_value / 100) % 10;
@@ -927,7 +927,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			}
 			pin12_last_state = 1;
 			previous_state = current_state;
-			current_state = CHANGING_7S_LIGHT;
+			current_state = CHANGING_seven_segment_light;
 		} else {
 			pin12_last_state = 0;
 			current_state = previous_state;
@@ -974,8 +974,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 				uart_log(4);
 			} else if(current_state == CHANGING_SONG) {
 				uart_log(2);
-			} else if(current_state == CHANGING_7S_LIGHT) {
-		        __HAL_TIM_SET_COMPARE(7s_light_timer, 7s_light_channel, potensiometer_value);
+			} else if(current_state == CHANGING_seven_segment_light) {
+		        __HAL_TIM_SET_COMPARE(seven_segment_light_timer, seven_segment_light_channel, potensiometer_value);
 			}
 			sample_no = 0;
 			samples_sum = 0;
