@@ -237,6 +237,10 @@ uint16_t bitActive3 = GPIO_PIN_0;
 //--------Digits
 uint8_t digits[4] = {0, 0, 0, 0};
 
+//--------Seven Segment Light
+TIM_HandleTypeDef *seven_segment_light_timer = &htim1;
+uint32_t seven_segment_light_channel = TIM_CHANNEL_3;
+
 //--------UART
 char received_data[50];
 uint8_t data_index = 0;
@@ -261,8 +265,6 @@ uint16_t led7 = GPIO_PIN_15;
 //--------Buzzer
 TIM_HandleTypeDef *buzzer_pwm_timer = &htim2;	// Point to PWM Timer configured in CubeMX
 uint32_t buzzer_pwm_channel = TIM_CHANNEL_2;   // Select configured PWM channel number
-TIM_HandleTypeDef *seven_segment_light_timer = &htim1;
-uint32_t seven_segment_light_channel = TIM_CHANNEL_3;
 const Tone *volatile melody_ptr;
 volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
