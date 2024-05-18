@@ -849,13 +849,16 @@ void uart_log(uint8_t state) {
 		case 7:
 			sprintf(transmit_data, "--[INFO][Pause time changed to %d][%d]\r\n>>", pause_time_second, uart_time_second);
 			break;
+		case 8:
+			sprintf(transmit_data, "--[ERROR][Play Mode not valid][%d]\r\n>>", uart_time_second);
+			break;
 		case 100:
 			sprintf(transmit_data, "--[ERROR][Invalid Command][%d]\r\n>>", uart_time_second);
 			break;
 		default:
 			break;
 	}
-	HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 200);
+	HAL_UART_Transmit(&huart3, transmit_data, strlen(transmit_data), 200);
 }
 
 void updateDigits()
@@ -946,7 +949,8 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 	else if (htim->Instance == TIM2) {
 		if(current_state == PLAYING ||
 		  (previous_state == PLAYING && current_state == CHANGING_VOLUME) ||
-		  (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME))
+		  (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT_VOLUME) ||
+		  (previous_state == PLAYING && current_state == CHANGING_SEVEN_SEGMENT_LIGHT_LDR))
 		  {
 
 			Update_Melody();
@@ -1101,8 +1105,8 @@ void HAL_ADC_ConvCpltCallback(ADC_HandleTypeDef *hadc) {
 //--------UART
 void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 {
-	if(huart->Instance == USART1) {
-		HAL_UART_Receive_IT(&huart1, &receive, 1);
+	if(huart->Instance == USART3) {
+		HAL_UART_Receive_IT(&huart3, &receive, 1);
 		received_data[data_index] = receive;
 		++data_index;
 
@@ -1110,7 +1114,7 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 			if(strcmpwithlength(received_data, MUSIC_SET, 9)) {
 				if(data_index == 13
 				    && received_data[9] == '('
-				    && received_data[10] >= '0' && received_data[10] <= '9'
+				    && received_data[10] >= '0' && received_data[10] <= '8'
 				    && received_data[11] == ')')
 				{
 					current_song = received_data[10] - '0';
@@ -1144,7 +1148,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 								&& received_data[16] >= '0' && received_data[16] <= '9'
 								&& received_data[17] == ')') {
 						    	   volume = (received_data[14] - '0') * 100 + (received_data[15] - '0') * 10 + received_data[16] - '0';
-						    	   log_state = 4; // volume changed
+						    	   if(volume > 100) log_state = 3;
+						    	   else log_state = 4; // volume changed
 						       } else {
 						    	   log_state = 3; // inside () is wrong
 						       }
@@ -1174,15 +1179,18 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				if(data_index == 19 && received_data[9] == '(' && received_data[17] == ')') {
 					if(strcmpwithlength(received_data + 10, "SHUFFLE", 7)) {
 						playing_mode = SHUFFLE;
-//						PLAYING_MODE(SHUFFLE)
+//						PLAY_MODE(SHUFFLE)
 						shuffleSongs();
+						log_state = 5;
 					} else if (strcmpwithlength(received_data + 10, "ORDERED", 7)) {
 						playing_mode = ORDERED;
 						orderSongs();
-
+						log_state = 5;
 					} else {
-						log_state = 3;
+						log_state = 8;
 					}
+				} else {
+					log_state = 8;
 				}
 
 			} else {
@@ -1254,9 +1262,9 @@ int main(void)
   orderSongs();
 //  shuffleSongs();
   Change_Song(0);
-  HAL_UART_Receive_IT(&huart1, &receive, 1);
+  HAL_UART_Receive_IT(&huart3, &receive, 1);
 //  HAL_UART_Transmit(&huart3, "salaaaam",8, HAL_MAX_DELAY);
-  HAL_UART_Transmit(&huart1, "sal", 3, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart3, "sal", 3, HAL_MAX_DELAY);
 
   /* USER CODE END 2 */
 
