@@ -154,6 +154,7 @@ typedef struct
 
 #define MAX_TIMER_VALUE 100
 #define MAX_SAMPLE_NUMBER 100
+#define number_of_songs 9
 
 /* USER CODE END PD */
 
@@ -260,8 +261,8 @@ char transmit_data[50];
 uint8_t uart_mode = 1;
 uint8_t log_state = 0;
 const char * MUSIC_SET = "MUSIC_SET";
-const char * CHANGE_VOLUME = "Change_Volume";
-const char * Play_Mode = "Play_Mode";
+const char * CHANGE_VOLUME = "CHANGE_VOLUME";
+const char * Play_Mode = "PLAY_MODE";
 const char * PAUSE_AFTER = "PAUSE_AFTER";
 
 //--------LEDs
@@ -283,7 +284,7 @@ volatile uint16_t melody_tone_count = 0;
 volatile uint16_t current_tone_number = 0;
 volatile uint32_t current_tone_end = 0;
 volatile uint16_t volume = 10; // (0 - 1000)
-const uint8_t number_of_songs = 9;
+//const uint8_t number_of_songs = 9;
 const uint16_t quarter_duration = 204;
 const uint16_t tempo2 = 2 * quarter_duration;
 const uint16_t tempo4 = quarter_duration;
@@ -768,9 +769,8 @@ void PWM_Change_Tone(uint16_t pwm_freq, uint16_t volume) // pwm_freq (1 - 20000)
 
 void Change_Song(uint8_t song_number)
 {
-	current_song = song_number;
 	song_time_second = 0;
-	Change_Melody(songs[current_song].melody, songs[current_song].melody_length);
+	Change_Melody(songs[songs_order[current_song]].melody, songs[songs_order[current_song]].melody_length);
 }
 
 
@@ -791,7 +791,8 @@ void Update_Melody()
         current_tone_end = HAL_GetTick() + active_tone.duration;
         current_tone_number++;
     } else if(current_tone_number >= melody_tone_count) {
-    	Change_Song((current_song + 1) % number_of_songs);
+    	current_song = (current_song + 1) % number_of_songs;
+    	Change_Song(songs_order[current_song]);
     }
 }
 
@@ -839,15 +840,23 @@ void uart_log(uint8_t state) {
 		case 4: //
 			sprintf(transmit_data, "--[INFO][Volume changed to %d][%d]\r\n>>", volume, uart_time_second);
 			break;
+		case 5:
+			sprintf(transmit_data, "--[ERROR][Songs Order Changed to %s][%d]\r\n>>", playing_mode ? "SHUFFLE" : "ORDERED", uart_time_second);
+			break;
+		case 6:
+			sprintf(transmit_data, "--[ERROR][Pause time not valid][%d]\r\n>>", playing_mode ? "SHUFFLE" : "ORDERED", uart_time_second);
+			break;
+		case 7:
+			sprintf(transmit_data, "--[INFO][Pause time changed to %d][%d]\r\n>>", pause_time_second, uart_time_second);
+			break;
 		case 100:
 			sprintf(transmit_data, "--[ERROR][Invalid Command][%d]\r\n>>", uart_time_second);
+			break;
 		default:
 			break;
 	}
 	HAL_UART_Transmit(&huart1, transmit_data, strlen(transmit_data), 200);
 }
-
-unsigned int a = 0;
 
 void updateDigits()
 {
@@ -944,9 +953,20 @@ void HAL_TIM_PeriodElapsedCallback(TIM_HandleTypeDef *htim)
 		}
 		else
 			PWM_Change_Tone(0, 0);
+
 	} else if(htim->Instance == TIM3) {
+		static uint8_t time_is_up = 0;
+
 		song_time_second += current_state == PLAYING;
 		++uart_time_second;
+		if(pause_time_second > 0 && current_state != PAUSE) {
+			--pause_time_second;
+			time_is_up = 0;
+		}
+		else if(!time_is_up) {
+			current_state = PAUSE;
+			time_is_up = 1;
+		}
 	}
 }
 
@@ -970,11 +990,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 		} else if(current_state == PLAYING) {
 			current_state = PAUSE;
 		}
-	} else if (GPIO_Pin == GPIO_PIN_10) { // C10 buttion : [] [.] []
+	} else if (GPIO_Pin == GPIO_PIN_10) { // C10 buttion : [] [.] [] * * [] []
 		if(HAL_GPIO_ReadPin(GPIOC, GPIO_PIN_10) == 1) {
 			if(pin10_last_state == 1) {
 				pin10_last_state = 0;
-				Change_Song((potensiometer_value * number_of_songs / 100));
+				current_song = potensiometer_value * number_of_songs / 100;
+				Change_Song(current_song);
 				current_state = previous_state;
 				return;
 			}
@@ -983,11 +1004,12 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = CHANGING_SONG;
 		} else {
 			pin10_last_state = 0;
-			Change_Song((potensiometer_value * number_of_songs / 100));
+			current_song = potensiometer_value * number_of_songs / 100;
+			Change_Song(current_song);
 			current_state = previous_state;
 
 		}
-	} else if (GPIO_Pin == GPIO_PIN_6) { // F6 Button [] [] [] * * [.]
+	} else if (GPIO_Pin == GPIO_PIN_6) { // F6 Button [] [] [] * * [.] []
 		if(HAL_GPIO_ReadPin(GPIOF, GPIO_PIN_6) == 1) {
 			if(pin6_last_state == 1) {
 				pin6_last_state = 0;
@@ -1001,7 +1023,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			pin6_last_state = 0;
 			current_state = previous_state;
 		}
-	} else if (GPIO_Pin == GPIO_PIN_12) { // D12 Button
+	} else if (GPIO_Pin == GPIO_PIN_12) { // D12 Button [] [] [] * * [] [.]
 		if(HAL_GPIO_ReadPin(GPIOD, GPIO_PIN_12) == 1) {
 			if(pin12_last_state == 1) {
 				pin12_last_state = 0;
@@ -1016,7 +1038,7 @@ void HAL_GPIO_EXTI_Callback(uint16_t GPIO_Pin)
 			current_state = previous_state;
 		}
 	}
-	else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.]
+	else if (GPIO_Pin == GPIO_PIN_15) { // A15 buttion : [] [] [.] * * [] []
 		if(HAL_GPIO_ReadPin(GPIOA, GPIO_PIN_15) == 1) {
 			if(pin15_last_state == 1) {
 				pin15_last_state = 0;
@@ -1091,7 +1113,8 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				    && received_data[10] >= '0' && received_data[10] <= '9'
 				    && received_data[11] == ')')
 				{
-					Change_Song(received_data[10] - '0');
+					current_song = received_data[10] - '0';
+					Change_Song(current_song);
 
 					log_state = 2; // music number changed
 
@@ -1129,14 +1152,33 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				} else {
 					log_state = 3; // inside () is wrong
 				}
-			} else if (strcmpwithlength(received_data, PAUSE_AFTER, 11)){
-//				if(data_index <= )
+			} else if (strcmpwithlength(received_data, PAUSE_AFTER, 11)){ //PAUSE_AFTER(500)
+				if(data_index <= 18 && data_index >= 15 && received_data[11] == '(') {
+					int i, sum = 0;
+					for(i = 12; received_data[i] != ')'; ++i) {
+						if(received_data[i] < '0' || received_data[i] > '9' || i > 18) {
+							log_state = 6;
+							break;
+						}
+						sum = sum * 10;
+						sum += received_data[i] - '0';
+					}
+					if(log_state != 6) {
+						pause_time_second = sum;
+						log_state = 7;
+					}
+				}
+
 
 			} else if(strcmpwithlength(received_data, Play_Mode, 9)) {
-				if(data_index == 18 && received_data[9] == '(' && received_data[17] == ')') {
+				if(data_index == 19 && received_data[9] == '(' && received_data[17] == ')') {
 					if(strcmpwithlength(received_data + 10, "SHUFFLE", 7)) {
-
+						playing_mode = SHUFFLE;
+//						PLAYING_MODE(SHUFFLE)
+						shuffleSongs();
 					} else if (strcmpwithlength(received_data + 10, "ORDERED", 7)) {
+						playing_mode = ORDERED;
+						orderSongs();
 
 					} else {
 						log_state = 3;
@@ -1198,8 +1240,10 @@ int main(void)
   MX_USART1_UART_Init();
   MX_USART3_UART_Init();
   /* USER CODE BEGIN 2 */
+
+
   srand(time(NULL));
-  Update_Melody();
+//  Update_Melody();
   htim2.Instance->PSC = 480000;
   HAL_TIM_Base_Start_IT(&htim1);
   HAL_TIM_Base_Start_IT(&htim2);
@@ -1207,10 +1251,13 @@ int main(void)
 
   PWM_Start();
 
+  orderSongs();
+//  shuffleSongs();
   Change_Song(0);
   HAL_UART_Receive_IT(&huart1, &receive, 1);
-  HAL_UART_Transmit(&huart3, "salaaaam",8, HAL_MAX_DELAY);
-//  HAL_UART_Transmit_IT(&huart1, "sal", 3);
+//  HAL_UART_Transmit(&huart3, "salaaaam",8, HAL_MAX_DELAY);
+  HAL_UART_Transmit(&huart1, "sal", 3, HAL_MAX_DELAY);
+
   /* USER CODE END 2 */
 
   /* Infinite loop */
