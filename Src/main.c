@@ -24,6 +24,8 @@
 
 #include "stdio.h"
 #include "string.h"
+#include <stdlib.h>
+#include <time.h>
 
 /* USER CODE END Includes */
 
@@ -213,6 +215,11 @@ enum states {
 	CHANGING_SEVEN_SEGMENT_LIGHT_LDR
 };
 
+enum songs_playing_mode {
+	ORDERED,
+	SHUFFLE
+};
+
 //-----------Global variables-----------\\
 
 
@@ -220,6 +227,8 @@ enum states {
 uint8_t current_state = PAUSE;
 uint32_t potensiometer_value;
 uint8_t previous_state = PAUSE;
+uint8_t playing_mode;
+
 
 //--------number to 7448
 GPIO_TypeDef * pin = GPIOD;
@@ -249,7 +258,8 @@ char transmit_data[50];
 uint8_t uart_mode = 1;
 uint8_t log_state = 0;
 const char * MUSIC_SET = "MUSIC_SET";
-const char * CHANGE_VOLUME = "CHANGE_VOLUME";
+const char * CHANGE_VOLUME = "Change_Volume";
+const char * Play_Mode = "Play_Mode";
 
 //--------LEDs
 GPIO_TypeDef * ledg = GPIOE;
@@ -285,6 +295,9 @@ uint8_t current_song = 0;
 //--------Times
 uint8_t song_time_second = 0;
 uint8_t uart_time_second = 0;
+
+//-------songs order
+uint8_t songs_order[number_of_songs];
 
 //--------melodies
 const Tone super_mario_bros[] = {
@@ -703,6 +716,23 @@ const song songs[] = {
 
 
 //--------playing songs functions
+
+void orderSongs() {
+	for(int i = 0; i < number_of_songs; ++i)
+		songs_order[i] = i;
+}
+
+void shuffleSongs() {
+	uint8_t i;
+	for (i = 0; i < number_of_songs - 1; i++)
+	{
+	  uint8_t j = i + rand() / (RAND_MAX / (number_of_songs - i) + 1);
+	  int t = songs_order[j];
+	  songs_order[j] = songs_order[i];
+	  songs_order[i] = t;
+	}
+}
+
 void PWM_Start()
 {
     HAL_TIM_PWM_Start(buzzer_pwm_timer, buzzer_pwm_channel);
@@ -1096,6 +1126,17 @@ void HAL_UART_RxCpltCallback(UART_HandleTypeDef *huart)
 				} else {
 					log_state = 3; // inside () is wrong
 				}
+			} else if(strcmpwithlength(received_data, Play_Mode, 9)) {
+				if(data_index == 18 && received_data[9] == '(' && received_data[17] == ')') {
+					if(strcmpwithlength(received_data + 10, "SHUFFLE", 7)) {
+
+					} else if (strcmpwithlength(received_data + 10, "ORDERED", 7)) {
+
+					} else {
+						log_state = 3;
+					}
+				}
+
 			} else {
 				log_state = 100;
 			}
@@ -1149,7 +1190,7 @@ int main(void)
   MX_ADC2_Init();
   MX_USART1_UART_Init();
   /* USER CODE BEGIN 2 */
-
+  srand(time(NULL));
   Update_Melody();
   htim2.Instance->PSC = 480000;
   HAL_TIM_Base_Start_IT(&htim1);
